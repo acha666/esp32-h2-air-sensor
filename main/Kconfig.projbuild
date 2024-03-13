@@ -1,0 +1,60 @@
+menu "Project Configuration"
+
+choice
+    prompt "Select the temperature sensor to use"
+    default PRJ_TEMP_SENSOR_SHT4x
+
+    config PRJ_TEMP_SENSOR_SHT4x
+        bool "SHT4x"
+    config PRJ_TEMP_SENSOR_SHT3x
+        bool "SHT3x"
+    config PRJ_TEMP_SENSOR_HDC302x
+        bool "HDC302x"
+endchoice
+
+config PRJ_TEMP_SENSOR_SHT4x_ADDR
+    hex "I2C address for SHT4x"
+    default 0x44
+    depends on PRJ_TEMP_SENSOR_SHT4x
+
+choice
+    prompt "SHT4x percision level"
+    default PRJ_TEMP_SENSOR_SHT4x_MED_PRECISION
+    depends on PRJ_TEMP_SENSOR_SHT4x
+
+    config PRJ_TEMP_SENSOR_SHT4x_LOW_PRECISION
+        bool "Low precision"
+    config PRJ_TEMP_SENSOR_SHT4x_MED_PRECISION
+        bool "Medium precision"
+    config PRJ_TEMP_SENSOR_SHT4x_HIGH_PRECISION
+        bool "High precision"  
+endchoice
+
+choice
+    prompt "SHT4x heater level"
+    default PRJ_TEMP_SENSOR_SHT4x_NO_HEATER
+    depends on PRJ_TEMP_SENSOR_SHT4x
+
+    config PRJ_TEMP_SENSOR_SHT4x_NO_HEATER
+        bool "No heater"
+    config PRJ_TEMP_SENSOR_SHT4x_LOW_HEATER_100MS
+        bool "Low heater 100ms"
+    config PRJ_TEMP_SENSOR_SHT4x_MED_HEATER_100MS
+        bool "Medium heater 100ms"
+    config PRJ_TEMP_SENSOR_SHT4x_HIGH_HEATER_100MS
+        bool "High heater 100ms"
+    
+endchoice
+
+config PRJ_TEMP_SENSOR_SHT3x_ADDR
+    hex "I2C address for SHT3x"
+    default 0x44
+    depends on PRJ_TEMP_SENSOR_SHT3x
+
+config PRJ_TEMP_SENSOR_HDC302x_ADDR
+    hex "I2C address for HDC302x"
+    default 0x44
+    depends on PRJ_TEMP_SENSOR_HDC302x
+
+
+endmenu
