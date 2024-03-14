@@ -39,24 +39,24 @@ Adafruit_SHT4x::Adafruit_SHT4x(void) {}
 /*!
  * @brief  SHT4x destructor
  */
-Adafruit_SHT4x::~Adafruit_SHT4x(void) {}
+Adafruit_SHT4x::~Adafruit_SHT4x(void)
+{
+    i2c_master_bus_rm_device(i2c_dev);
+}
 
 /**
  * Initialises the I2C bus, and assigns the I2C address to us.
  *
- * @param busConfig   The I2C bus config to use. see https://docs.espressif.com/projects/esp-idf/en/v5.2/esp32h2/api-reference/peripherals/i2c.html
+ * @param bus_handle  The handle of the I2C bus to use for communication.
+ * @param sht4x_addr  The 7-bit I2C address of the sensor.
  *
  * @return ESP_OK if initialisation was successful, otherwise the error code.
  */
-esp_err_t Adafruit_SHT4x::begin(i2c_master_bus_config_t *busConfig, uint8_t sht4x_addr)
+esp_err_t Adafruit_SHT4x::begin(i2c_master_bus_handle_t bus_handle, uint8_t sht4x_addr)
 {
     esp_err_t ret;
 
-    ret = i2c_new_master_bus(busConfig, &i2c_bus);
-    if (ret != ESP_OK)
-    {
-        return ret;
-    }
+    i2c_bus = bus_handle;
 
     ret = i2c_master_probe(i2c_bus, sht4x_addr, default_timeout / portTICK_PERIOD_MS); // check if the device is connected
     if (ret != ESP_OK)

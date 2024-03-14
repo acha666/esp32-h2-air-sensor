@@ -77,7 +77,7 @@ public:
     Adafruit_SHT4x(void);
     ~Adafruit_SHT4x(void);
 
-    esp_err_t begin(i2c_master_bus_config_t *busConfig, uint8_t sht4x_addr = 0x44);
+    esp_err_t begin(i2c_master_bus_handle_t bus_handle, uint8_t sht4x_addr);
     uint32_t readSerial(void);
     esp_err_t reset(void);
 

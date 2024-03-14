@@ -1,5 +1,13 @@
-#ifndef __MAIN_H
-#define __MAIN_H
+#ifndef __ZIGBEE_H
+#define __ZIGBEE_H
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+
+    void ZigbeeTask(void *pvParameters);
+    void reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID, void *value, uint8_t value_length);
 
 /* Zigbee configuration */
 #define INSTALLCODE_POLICY_ENABLE false /* enable the install code policy for security */
@@ -27,5 +35,9 @@
     {                                                      \
         .host_connection_mode = HOST_CONNECTION_MODE_NONE, \
     }
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
