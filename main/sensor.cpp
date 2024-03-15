@@ -6,7 +6,7 @@
 #include "sensor.h"
 
 #include "sht4x.h"
-#include "lps22.h"
+#include "register.h"
 
 #ifdef CONFIG_PRJ_TEMP_SENSOR_SHT4x
 Adafruit_SHT4x sht4x;
