@@ -27,7 +27,11 @@
  *  BSD license, all text above must be included in any redistribution
  */
 
-#include "sht4x.h"
+#include "adafruit_sht4x.h"
+#include "esp_timer.h"
+#include "string.h"
+
+#define millis() (esp_timer_get_time() / 1000)
 
 static uint8_t crc8(const uint8_t *data, int len);
 
@@ -42,6 +46,14 @@ Adafruit_SHT4x::Adafruit_SHT4x(void) {}
 Adafruit_SHT4x::~Adafruit_SHT4x(void)
 {
     i2c_master_bus_rm_device(i2c_dev);
+    if (temp_sensor)
+    {
+        delete temp_sensor;
+    }
+    if (humidity_sensor)
+    {
+        delete humidity_sensor;
+    }
 }
 
 /**
@@ -58,7 +70,7 @@ esp_err_t Adafruit_SHT4x::begin(i2c_master_bus_handle_t bus_handle, uint8_t sht4
 
     i2c_bus = bus_handle;
 
-    ret = i2c_master_probe(i2c_bus, sht4x_addr, default_timeout / portTICK_PERIOD_MS); // check if the device is connected
+    ret = i2c_master_probe(i2c_bus, sht4x_addr, 500); // check if the device is connected
     if (ret != ESP_OK)
     {
         return ret;
@@ -81,6 +93,9 @@ esp_err_t Adafruit_SHT4x::begin(i2c_master_bus_handle_t bus_handle, uint8_t sht4
     {
         return ret;
     }
+
+    humidity_sensor = new Adafruit_SHT4x_Humidity(this);
+    temp_sensor = new Adafruit_SHT4x_Temp(this);
 
     return ESP_OK;
 }
@@ -181,9 +196,9 @@ sht4x_heater_t Adafruit_SHT4x::getHeater(void) { return _heater; }
     @returns ESP_OK if the event data was read successfully
 */
 /**************************************************************************/
-esp_err_t Adafruit_SHT4x::read(float *humidity,
-                               float *temp)
+esp_err_t Adafruit_SHT4x::getEvent(sensors_event_t *humidity, sensors_event_t *temp)
 {
+    uint32_t t = millis();
 
     uint8_t readbuffer[6];
     uint8_t cmd = SHT4x_NOHEAT_HIGHPRECISION;
@@ -273,9 +288,118 @@ esp_err_t Adafruit_SHT4x::read(float *humidity,
         _humidity = 0.0;
     }
 
-    *temp = _temperature;
-    *humidity = _humidity;
+    if (temp)
+        fillTempEvent(temp, t);
+    if (humidity)
+        fillHumidityEvent(humidity, t);
+
     return ESP_OK;
+}
+
+void Adafruit_SHT4x::fillTempEvent(sensors_event_t *temp, uint32_t timestamp)
+{
+    memset(temp, 0, sizeof(sensors_event_t));
+    temp->version = sizeof(sensors_event_t);
+    temp->sensor_id = _sensorid_temp;
+    temp->type = SENSOR_TYPE_AMBIENT_TEMPERATURE;
+    temp->timestamp = timestamp;
+    temp->temperature = _temperature;
+}
+
+void Adafruit_SHT4x::fillHumidityEvent(sensors_event_t *humidity,
+                                       uint32_t timestamp)
+{
+    memset(humidity, 0, sizeof(sensors_event_t));
+    humidity->version = sizeof(sensors_event_t);
+    humidity->sensor_id = _sensorid_humidity;
+    humidity->type = SENSOR_TYPE_RELATIVE_HUMIDITY;
+    humidity->timestamp = timestamp;
+    humidity->relative_humidity = _humidity;
+}
+
+/**
+ * @brief Gets the Adafruit_Sensor object for the SHT4x's humidity sensor
+ *
+ * @return Adafruit_Sensor*
+ */
+Adafruit_Sensor *Adafruit_SHT4x::getHumiditySensor(void)
+{
+    return humidity_sensor;
+}
+
+/**
+ * @brief Gets the Adafruit_Sensor object for the SHT4x's temperature sensor
+ *
+ * @return Adafruit_Sensor*
+ */
+Adafruit_Sensor *Adafruit_SHT4x::getTemperatureSensor(void)
+{
+    return temp_sensor;
+}
+/**
+ * @brief  Gets the sensor_t object describing the SHT4x's humidity sensor
+ *
+ * @param sensor The sensor_t object to be populated
+ */
+void Adafruit_SHT4x_Humidity::getSensor(sensor_t *sensor)
+{
+    /* Clear the sensor_t object */
+    memset(sensor, 0, sizeof(sensor_t));
+
+    /* Insert the sensor name in the fixed length char array */
+    strncpy(sensor->name, "SHT4x_H", sizeof(sensor->name) - 1);
+    sensor->name[sizeof(sensor->name) - 1] = 0;
+    sensor->version = 1;
+    sensor->sensor_id = _sensorID;
+    sensor->type = SENSOR_TYPE_RELATIVE_HUMIDITY;
+    sensor->min_delay = 0;
+    sensor->min_value = 0;
+    sensor->max_value = 100;
+    sensor->resolution = 2;
+}
+
+/**
+    @brief  Gets the humidity as a standard sensor event
+    @param  event Sensor event object that will be populated
+    @returns True
+ */
+bool Adafruit_SHT4x_Humidity::getEvent(sensors_event_t *event)
+{
+    _theSHT4x->getEvent(event, NULL);
+
+    return true;
+}
+/**
+ * @brief  Gets the sensor_t object describing the SHT4x's tenperature sensor
+ *
+ * @param sensor The sensor_t object to be populated
+ */
+void Adafruit_SHT4x_Temp::getSensor(sensor_t *sensor)
+{
+    /* Clear the sensor_t object */
+    memset(sensor, 0, sizeof(sensor_t));
+
+    /* Insert the sensor name in the fixed length char array */
+    strncpy(sensor->name, "SHT4x_T", sizeof(sensor->name) - 1);
+    sensor->name[sizeof(sensor->name) - 1] = 0;
+    sensor->version = 1;
+    sensor->sensor_id = _sensorID;
+    sensor->type = SENSOR_TYPE_AMBIENT_TEMPERATURE;
+    sensor->min_delay = 0;
+    sensor->min_value = -40;
+    sensor->max_value = 85;
+    sensor->resolution = 0.3; // depends on calibration data?
+}
+/*!
+    @brief  Gets the temperature as a standard sensor event
+    @param  event Sensor event object that will be populated
+    @returns true
+*/
+bool Adafruit_SHT4x_Temp::getEvent(sensors_event_t *event)
+{
+    _theSHT4x->getEvent(NULL, event);
+
+    return true;
 }
 
 /**

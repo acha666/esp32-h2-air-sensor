@@ -1,10 +1,13 @@
 #include <Adafruit_LPS2X.h>
+#include <freertos/FreeRTOS.h>
+#include "esp_log.h"
 
 /**
  * @brief Destroy the Adafruit_LPS22::Adafruit_LPS22 object
  *
  */
-Adafruit_LPS22::~Adafruit_LPS22(void) {
+Adafruit_LPS22::~Adafruit_LPS22(void)
+{
   if (temp_sensor)
     delete temp_sensor;
   if (pressure_sensor)
@@ -15,16 +18,21 @@ Adafruit_LPS22::~Adafruit_LPS22(void) {
  *   @param sensor_id Optional unique ID for the sensor set
  *   @returns True if chip identified and initialized
  */
-bool Adafruit_LPS22::_init(int32_t sensor_id) {
+esp_err_t Adafruit_LPS22::_init(int32_t sensor_id)
+{
 
-  Adafruit_BusIO_Register chip_id = Adafruit_BusIO_Register(
-      i2c_dev, spi_dev, ADDRBIT8_HIGH_TOREAD, LPS2X_WHOAMI, 1);
+  I2C_Register chip_id = I2C_Register(
+      i2c_dev, LPS2X_WHOAMI, 1);
 
   // make sure we're talking to the right chip
-  uint8_t id = chip_id.read();
+  uint8_t id;
+  ESP_ERROR_CHECK(chip_id.read(&id));
 
-  if (id != LPS22HB_CHIP_ID) {
-    return false;
+  ESP_LOGI("LPS22", "LPS22 ID: 0x%02x", id);
+
+  if (id != LPS22HB_CHIP_ID && id != LPS22HH_CHIP_ID)
+  {
+    return ESP_ERR_INVALID_RESPONSE;
   }
   _sensorid_pressure = sensor_id;
   _sensorid_temp = sensor_id + 1;
@@ -32,14 +40,14 @@ bool Adafruit_LPS22::_init(int32_t sensor_id) {
   temp_scaling = 100;
   temp_offset = 0;
 
-  ctrl1_reg = new Adafruit_BusIO_Register(
-      i2c_dev, spi_dev, ADDRBIT8_HIGH_TOREAD, LPS22_CTRL_REG1, 1);
-  ctrl2_reg = new Adafruit_BusIO_Register(
-      i2c_dev, spi_dev, ADDRBIT8_HIGH_TOREAD, LPS22_CTRL_REG2, 1);
-  ctrl3_reg = new Adafruit_BusIO_Register(
-      i2c_dev, spi_dev, ADDRBIT8_HIGH_TOREAD, LPS22_CTRL_REG3, 1);
-  threshp_reg = new Adafruit_BusIO_Register(
-      i2c_dev, spi_dev, ADDRBIT8_HIGH_TOREAD, LPS22_THS_P_L_REG, 1);
+  ctrl1_reg = new I2C_Register(
+      i2c_dev, LPS22_CTRL_REG1, 1);
+  ctrl2_reg = new I2C_Register(
+      i2c_dev, LPS22_CTRL_REG2, 1);
+  ctrl3_reg = new I2C_Register(
+      i2c_dev, LPS22_CTRL_REG3, 1);
+  threshp_reg = new I2C_Register(
+      i2c_dev, LPS22_THS_P_L_REG, 1);
 
   reset();
   // do any software reset or other initial setup
@@ -50,8 +58,8 @@ bool Adafruit_LPS22::_init(int32_t sensor_id) {
   pressure_sensor = new Adafruit_LPS2X_Pressure(this);
   temp_sensor = new Adafruit_LPS2X_Temp(this);
 
-  delay(10); // delay for first reading
-  return true;
+  vTaskDelay(1); // delay for first reading
+  return ESP_OK;
 }
 
 /**
@@ -59,9 +67,10 @@ bool Adafruit_LPS22::_init(int32_t sensor_id) {
  *
  * @param new_data_rate The data rate to set. Must be a `lps22_rate_t`
  */
-void Adafruit_LPS22::setDataRate(lps22_rate_t new_data_rate) {
-  Adafruit_BusIO_RegisterBits data_rate =
-      Adafruit_BusIO_RegisterBits(ctrl1_reg, 3, 4);
+void Adafruit_LPS22::setDataRate(lps22_rate_t new_data_rate)
+{
+  I2C_RegisterBits data_rate =
+      I2C_RegisterBits(ctrl1_reg, 3, 4);
 
   data_rate.write((uint8_t)new_data_rate);
 
@@ -74,9 +83,10 @@ void Adafruit_LPS22::setDataRate(lps22_rate_t new_data_rate) {
  *
  * @return lps22_rate_t The current data rate
  */
-lps22_rate_t Adafruit_LPS22::getDataRate(void) {
-  Adafruit_BusIO_RegisterBits data_rate =
-      Adafruit_BusIO_RegisterBits(ctrl1_reg, 3, 4);
+lps22_rate_t Adafruit_LPS22::getDataRate(void)
+{
+  I2C_RegisterBits data_rate =
+      I2C_RegisterBits(ctrl1_reg, 3, 4);
 
   return (lps22_rate_t)data_rate.read();
 }
@@ -96,7 +106,8 @@ void Adafruit_LPS22::configureInterrupt(bool activelow, bool opendrain,
                                         bool data_ready, bool pres_high,
                                         bool pres_low, bool fifo_full,
                                         bool fifo_watermark,
-                                        bool fifo_overflow) {
+                                        bool fifo_overflow)
+{
   uint8_t reg = (activelow << 7) | (opendrain << 6) | (fifo_full << 5) |
                 (fifo_watermark << 4) | (fifo_overflow << 3) |
                 (data_ready << 2) | (pres_low << 1) | (pres_high);

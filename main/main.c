@@ -9,7 +9,7 @@
 #include "sensor.h"
 #include "zigbee.h"
 
-QueueHandle_t tempSensorDataQueue;
+QueueHandle_t sensorDataQueue;
 TaskHandle_t tempSensorTaskHandle = NULL;
 static const char *TAG = "DEMO";
 
@@ -32,19 +32,29 @@ void button_task(void *pvParameters)
 void MainTask(void *pvParameters)
 {
     static const char TAG[] = "MainTask";
-    static TempSensorData_t temp_data;
+    static sensorData_t data;
     while (1)
     {
-        xQueueReset(tempSensorDataQueue);
+        xQueueReset(sensorDataQueue);
         xTaskNotifyGive(tempSensorTaskHandle);
 
-        if (xQueueReceive(tempSensorDataQueue, &temp_data, pdMS_TO_TICKS(5000)) == pdPASS)
+        if (xQueueReceive(sensorDataQueue, &data, pdMS_TO_TICKS(5000)) == pdPASS)
         {
-            ESP_LOGI(TAG, "Hum: %.2f Tmp: %.2f", temp_data.humidity, temp_data.temperature);
-            uint16_t temperature_int = temp_data.temperature * 100;
-            uint16_t humidity_int = temp_data.humidity * 100;
+            ESP_LOGI(TAG, "Hum: %.2f Tmp: %.2f Pre: %.2f", data.humidity, data.temperature, data.pressure);
+            uint16_t temperature_int = data.temperature * 100;
+            uint16_t humidity_int = data.humidity * 100;
+
             reportAttribute(HA_ESP_LIGHT_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_TEMP_MEASUREMENT, ESP_ZB_ZCL_ATTR_TEMP_MEASUREMENT_VALUE_ID, &temperature_int, 2);
             reportAttribute(HA_ESP_LIGHT_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_REL_HUMIDITY_MEASUREMENT, ESP_ZB_ZCL_ATTR_REL_HUMIDITY_MEASUREMENT_VALUE_ID, &humidity_int, 2);
+
+            int16_t pressure_hpa_int = data.pressure;
+            int16_t pressure_0_1_hpa_int = data.pressure * 10;
+            uint8_t pressure_scale = 1;
+
+            reportAttribute(HA_ESP_LIGHT_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_PRESSURE_MEASUREMENT, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_VALUE_ID, &pressure_hpa_int, 2); // basic
+
+            reportAttribute(HA_ESP_LIGHT_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_PRESSURE_MEASUREMENT, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_SCALED_VALUE_ID, &pressure_0_1_hpa_int, 2);
+            reportAttribute(HA_ESP_LIGHT_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_PRESSURE_MEASUREMENT, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_SCALE_ID, &pressure_scale, 1);
         }
         else
         {
@@ -109,8 +119,8 @@ void app_main(void)
 {
     // xTaskCreate(I2CScanTask, "I2C_Scan_Task", 4096, NULL, 5, NULL);
 
-    tempSensorDataQueue = xQueueCreate(10, sizeof(TempSensorData_t));
-    assert(tempSensorDataQueue != NULL);
+    sensorDataQueue = xQueueCreate(10, sizeof(sensorData_t));
+    assert(sensorDataQueue != NULL);
 
     esp_zb_platform_config_t config = {
         .radio_config = ESP_ZB_DEFAULT_RADIO_CONFIG(),
@@ -122,7 +132,7 @@ void app_main(void)
     /* hardware related and device init */
 
     xTaskCreate(ZigbeeTask, "Zigbee_Task", 4096, NULL, 5, NULL);
-    xTaskCreate(TempSensorInitTask, "Temp_Sensor_Init_Task", 4096, NULL, 5, NULL);
+    xTaskCreate(SensorInitTask, "Temp_Sensor_Init_Task", 4096, NULL, 5, NULL);
 
     gpio_set_direction(GPIO_NUM_12, GPIO_MODE_INPUT);
     gpio_set_pull_mode(GPIO_NUM_12, GPIO_PULLUP_ONLY);

@@ -8,10 +8,11 @@ extern "C" {
 typedef struct {
     float temperature;
     float humidity;
-} TempSensorData_t;
+    float pressure;
+} sensorData_t;
 
-void TempSensorInitTask(void *pvParameters);
-void TempSensorTask(void *pvParameters);
+void SensorInitTask(void *pvParameters);
+void SensorTask(void *pvParameters);
 
 #ifdef __cplusplus
 }

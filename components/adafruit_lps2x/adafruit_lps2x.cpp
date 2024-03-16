@@ -34,7 +34,14 @@
  *     v1.0 - First release
  */
 
-#include "Adafruit_LPS2X.h"
+#include "adafruit_lps2x.h"
+#include "i2c_register.h"
+
+#include "freertos/FreeRTOS.h"
+#include "esp_timer.h"
+#include "string.h"
+
+#define millis() (esp_timer_get_time() / 1000)
 
 /**
  * @brief Construct a new Adafruit_LPS2X::Adafruit_LPS2X object
@@ -52,19 +59,31 @@ Adafruit_LPS2X::Adafruit_LPS2X(void) {}
  *            The unique ID to differentiate the sensors from others
  *    @return True if initialization was successful, otherwise false.
  */
-bool Adafruit_LPS2X::begin_I2C(uint8_t i2c_address, TwoWire *wire, int32_t sensor_id)
+esp_err_t Adafruit_LPS2X::begin_I2C(i2c_master_bus_handle_t i2c_bus, uint8_t i2c_address, int32_t sensor_id)
 {
-  spi_dev = NULL;
+  esp_err_t ret;
+
   if (i2c_dev)
   {
-    delete i2c_dev; // remove old interface
+    i2c_master_bus_rm_device(i2c_dev);
   }
 
-  i2c_dev = new Adafruit_I2CDevice(i2c_address, wire);
-
-  if (!i2c_dev->begin())
+  ret = i2c_master_probe(i2c_bus, i2c_address, 500); // check if the device is connected
+  if (ret != ESP_OK)
   {
-    return false;
+    return ret;
+  }
+
+  i2c_device_config_t device_cfg = {
+      .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+      .device_address = i2c_address,
+      .scl_speed_hz = 100000,
+  };
+
+  ret = i2c_master_bus_add_device(i2c_bus, &device_cfg, &i2c_dev);
+  if (ret != ESP_OK)
+  {
+    return ret;
   }
 
   return _init(sensor_id);
@@ -76,13 +95,13 @@ bool Adafruit_LPS2X::begin_I2C(uint8_t i2c_address, TwoWire *wire, int32_t senso
  */
 void Adafruit_LPS2X::reset(void)
 {
-  Adafruit_BusIO_RegisterBits sw_reset =
-      Adafruit_BusIO_RegisterBits(ctrl2_reg, 1, 2);
+  I2C_RegisterBits sw_reset =
+      I2C_RegisterBits(ctrl2_reg, 1, 2);
 
   sw_reset.write(1);
   while (sw_reset.read())
   {
-    delay(1);
+    vTaskDelay(1);
   }
 }
 
@@ -106,28 +125,22 @@ void Adafruit_LPS2X::_read(void)
   // get raw readings
   uint8_t pressure_addr = LPS2X_PRESS_OUT_XL;
   uint8_t temp_addr = LPS2X_TEMP_OUT_L;
-  if (spi_dev)
-  {
-    // for LPS25 SPI, addr[7] is r/w, addr[6] is auto increment
-    pressure_addr |= inc_spi_flag;
-    temp_addr |= inc_spi_flag;
-  }
 
   // for one-shot mode, must manually initiate a reading
   if (isOneShot)
   {
-    Adafruit_BusIO_RegisterBits oneshot_bit =
-        Adafruit_BusIO_RegisterBits(ctrl2_reg, 1, 0);
+    I2C_RegisterBits oneshot_bit =
+        I2C_RegisterBits(ctrl2_reg, 1, 0);
     oneshot_bit.write(1); // initiate reading
     while (oneshot_bit.read())
-      delay(1); // wait for completion
+      vTaskDelay(1); // wait for completion
   }
 
-  Adafruit_BusIO_Register pressure_data = Adafruit_BusIO_Register(
-      i2c_dev, spi_dev, ADDRBIT8_HIGH_TOREAD, pressure_addr, 3);
+  I2C_Register pressure_data = I2C_Register(
+      i2c_dev, pressure_addr, 3);
 
-  Adafruit_BusIO_Register temp_data = Adafruit_BusIO_Register(
-      i2c_dev, spi_dev, ADDRBIT8_HIGH_TOREAD, temp_addr, 2);
+  I2C_Register temp_data = I2C_Register(
+      i2c_dev, temp_addr, 2);
 
   uint8_t buffer[3];
 

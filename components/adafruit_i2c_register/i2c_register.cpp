@@ -1,6 +1,6 @@
 /**
  * @file i2c_register.cpp
- * 
+ *
  * @todo Rewrite comments
  */
 
@@ -20,10 +20,10 @@
  * to 1 byte
  */
 I2C_Register::I2C_Register(i2c_master_dev_handle_t i2cdevice,
-                                                 uint16_t reg_addr,
-                                                 uint8_t width,
-                                                 I2C_Register_ByteOrder byteorder,
-                                                 uint8_t address_width)
+                           uint16_t reg_addr,
+                           uint8_t width,
+                           I2C_Register_ByteOrder byteorder,
+                           uint8_t address_width)
 {
     _i2cdevice = i2cdevice;
     _addrwidth = address_width;
@@ -98,7 +98,7 @@ esp_err_t I2C_Register::write(uint32_t value, uint8_t numbytes)
  */
 uint32_t I2C_Register::read(void)
 {
-    if (!read(_buffer, _width))
+    if (read(_buffer, _width) != ESP_OK)
     {
         return -1;
     }

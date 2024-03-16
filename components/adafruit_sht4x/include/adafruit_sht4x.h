@@ -21,6 +21,7 @@
 #define ADAFRUIT_SHT4x_H
 
 #include "driver/i2c_master.h"
+#include "adafruit_sensor.h"
 #include "freertos/FreeRTOS.h"
 #include "esp_err.h"
 
@@ -68,6 +69,47 @@ typedef enum
     SHT4X_LOW_HEATER_100MS,
 } sht4x_heater_t;
 
+class Adafruit_SHT4x;
+
+/**
+ * @brief  Adafruit Unified Sensor interface for the humidity sensor component
+ * of SHT4x
+ *
+ */
+class Adafruit_SHT4x_Humidity : public Adafruit_Sensor
+{
+public:
+    /** @brief Create an Adafruit_Sensor compatible object for the humidity sensor
+      @param parent A pointer to the SHT4x class */
+    Adafruit_SHT4x_Humidity(Adafruit_SHT4x *parent) { _theSHT4x = parent; }
+    bool getEvent(sensors_event_t *);
+    void getSensor(sensor_t *);
+
+private:
+    int _sensorID = 0x0401;
+    Adafruit_SHT4x *_theSHT4x = NULL;
+};
+
+/**
+ * @brief Adafruit Unified Sensor interface for the temperature sensor component
+ * of SHT4x
+ *
+ */
+class Adafruit_SHT4x_Temp : public Adafruit_Sensor
+{
+public:
+    /** @brief Create an Adafruit_Sensor compatible object for the temp sensor
+        @param parent A pointer to the SHT4x class */
+    Adafruit_SHT4x_Temp(Adafruit_SHT4x *parent) { _theSHT4x = parent; }
+
+    bool getEvent(sensors_event_t *);
+    void getSensor(sensor_t *);
+
+private:
+    int _sensorID = 0x0400;
+    Adafruit_SHT4x *_theSHT4x = NULL;
+};
+
 /**
  * Driver for the Adafruit SHT4x Temperature and Humidity breakout board.
  */
@@ -86,7 +128,9 @@ public:
     void setHeater(sht4x_heater_t heat);
     sht4x_heater_t getHeater(void);
 
-    esp_err_t read(float *humidity, float *temp);
+    esp_err_t getEvent(sensors_event_t *humidity, sensors_event_t *temp);
+    Adafruit_Sensor *getTemperatureSensor(void);
+    Adafruit_Sensor *getHumiditySensor(void);
 
 protected:
     float _temperature, ///< Last reading's temperature (C)
@@ -98,10 +142,20 @@ protected:
     i2c_master_bus_handle_t i2c_bus; ///< Pointer to I2C bus interface
     i2c_master_dev_handle_t i2c_dev; ///< Pointer to I2C device
 
+    Adafruit_SHT4x_Temp *temp_sensor = NULL;         ///< Temp sensor data object
+    Adafruit_SHT4x_Humidity *humidity_sensor = NULL; ///< Humidity sensor data object
+
 private:
     uint16_t default_timeout = 500; // I2C communicate timeout in ms
+
     sht4x_precision_t _precision = SHT4X_HIGH_PRECISION;
     sht4x_heater_t _heater = SHT4X_NO_HEATER;
+
+    friend class Adafruit_SHT4x_Temp;     ///< Gives access to private members to Temp data object
+    friend class Adafruit_SHT4x_Humidity; ///< Gives access to private members to Humidity data object
+    
+    void fillTempEvent(sensors_event_t *temp, uint32_t timestamp);
+    void fillHumidityEvent(sensors_event_t *humidity, uint32_t timestamp);
 };
 
 #endif

@@ -7,7 +7,9 @@ extern "C"
 #endif
 
     void ZigbeeTask(void *pvParameters);
-    void reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID, void *value, uint8_t value_length);
+    esp_err_t reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID, void *value, uint8_t value_length);
+
+    void app_zb_report_pressure(float pressure_hpa);
 
 /* Zigbee configuration */
 #define INSTALLCODE_POLICY_ENABLE false /* enable the install code policy for security */

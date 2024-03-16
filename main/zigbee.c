@@ -76,6 +76,22 @@ void ZigbeeTask(void *pvParameters)
     };
     esp_zb_attribute_list_t *esp_zb_humidity_meas_cluster = esp_zb_humidity_meas_cluster_create(&humidity_meas_cfg);
 
+    // ------------------------------ Cluster Pressure ------------------------------
+    esp_zb_pressure_meas_cluster_cfg_t pressure_meas_cfg = {
+        .measured_value = 0xFFFF,
+        .min_value = 300,
+        .max_value = 1100,
+    };
+    uint16_t pressure_scaled_value = 0xFFFF;
+    uint16_t pressure_min_scaled_value = 300;
+    uint16_t pressure_max_scaled_value = 1100;
+    uint8_t pressure_scale = 0;
+    esp_zb_attribute_list_t *esp_zb_pressure_meas_cluster = esp_zb_pressure_meas_cluster_create(&pressure_meas_cfg);
+    ESP_ERROR_CHECK(esp_zb_pressure_meas_cluster_add_attr(esp_zb_pressure_meas_cluster, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_SCALED_VALUE_ID, &pressure_scaled_value));
+    ESP_ERROR_CHECK(esp_zb_pressure_meas_cluster_add_attr(esp_zb_pressure_meas_cluster, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_MIN_SCALED_VALUE_ID, &pressure_min_scaled_value));
+    ESP_ERROR_CHECK(esp_zb_pressure_meas_cluster_add_attr(esp_zb_pressure_meas_cluster, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_MAX_SACLED_VALUE_ID, &pressure_max_scaled_value));
+    ESP_ERROR_CHECK(esp_zb_pressure_meas_cluster_add_attr(esp_zb_pressure_meas_cluster, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_SCALE_ID, &pressure_scale));
+
     // ------------------------------ Create cluster list ------------------------------
     esp_zb_cluster_list_t *esp_zb_cluster_list = esp_zb_zcl_cluster_list_create();
     esp_zb_cluster_list_add_basic_cluster(esp_zb_cluster_list, esp_zb_basic_cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
@@ -84,6 +100,7 @@ void ZigbeeTask(void *pvParameters)
     esp_zb_cluster_list_add_binary_input_cluster(esp_zb_cluster_list, esp_zb_binary_input_cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
     esp_zb_cluster_list_add_temperature_meas_cluster(esp_zb_cluster_list, esp_zb_temperature_meas_cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
     esp_zb_cluster_list_add_humidity_meas_cluster(esp_zb_cluster_list, esp_zb_humidity_meas_cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
+    esp_zb_cluster_list_add_pressure_meas_cluster(esp_zb_cluster_list, esp_zb_pressure_meas_cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
 
     // ------------------------------ Create endpoint list ------------------------------
     esp_zb_ep_list_t *esp_zb_ep_list = esp_zb_ep_list_create();
@@ -98,8 +115,17 @@ void ZigbeeTask(void *pvParameters)
     esp_zb_main_loop_iteration();
 }
 
-void reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID, void *value, uint8_t value_length)
+esp_err_t reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID, void *value, uint8_t value_length)
 {
+    esp_zb_zcl_status_t status;
+    status = esp_zb_zcl_set_attribute_val(endpoint, clusterID, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE, attributeID, value, false);
+
+    if (status != ESP_ZB_ZCL_STATUS_SUCCESS)
+    {
+        ESP_LOGE(TAG, "Setting attribute %04x:%04x failed(0x%02x)!", clusterID, attributeID, status);
+        return ESP_FAIL;
+    }
+
     esp_zb_zcl_report_attr_cmd_t cmd = {
         .zcl_basic_cmd = {
             .dst_addr_u.addr_short = 0x0000,
@@ -111,9 +137,16 @@ void reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID,
         .attributeID = attributeID,
         .cluster_role = ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
     };
-    esp_zb_zcl_attr_t *value_r = esp_zb_zcl_get_attribute(endpoint, clusterID, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE, attributeID);
-    memcpy(value_r->data_p, value, value_length);
-    esp_zb_zcl_report_attr_cmd_req(&cmd);
+
+    status = esp_zb_zcl_report_attr_cmd_req(&cmd);
+
+    if (status != ESP_ZB_ZCL_STATUS_SUCCESS)
+    {
+        ESP_LOGE(TAG, "Updating attribute %04x:%04x failed(0x%02x)!", clusterID, attributeID, status);
+        return ESP_FAIL;
+    }
+
+    return ESP_OK;
 }
 
 static esp_err_t zb_attribute_handler(const esp_zb_zcl_set_attr_value_message_t *message)

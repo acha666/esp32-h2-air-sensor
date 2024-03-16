@@ -56,5 +56,20 @@ config PRJ_TEMP_SENSOR_HDC302x_ADDR
     default 0x44
     depends on PRJ_TEMP_SENSOR_HDC302x
 
+choice 
+    prompt "Select the pressure sensor to use"
+    default PRJ_PRESSURE_SENSOR_LPS22HH
+
+    config PRJ_PRESSURE_SENSOR_LPS22HH
+        bool "LPS22HH"
+    config PRJ_PRESSURE_SENSOR_LPS22HB
+        bool "LPS22HB"
+
+endchoice
+
+config PRJ_PRESSURE_SENSOR_LPS22_ADDR
+    hex "I2C address for LPS22"
+    default 0x5D
+    depends on PRJ_PRESSURE_SENSOR_LPS22HH || PRJ_PRESSURE_SENSOR_LPS22HB
 
 endmenu

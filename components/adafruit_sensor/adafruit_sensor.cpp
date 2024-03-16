@@ -43,7 +43,7 @@ void Adafruit_Sensor::printSensorDetails(void)
         ESP_LOGI(TAG, "Rotation vector");
         break;
     case SENSOR_TYPE_RELATIVE_HUMIDITY:
-        ESP_LOGI(TAG, "Relative Humidity (%)");
+        ESP_LOGI(TAG, "Relative Humidity (%%)");
         break;
     case SENSOR_TYPE_AMBIENT_TEMPERATURE:
         ESP_LOGI(TAG, "Ambient Temp (C)");
@@ -97,7 +97,7 @@ void Adafruit_Sensor::printSensorDetails(void)
         ESP_LOGI(TAG, "Gas Resistance (ohms)");
         break;
     case SENSOR_TYPE_UNITLESS_PERCENT:
-        ESP_LOGI(TAG, "Unitless Percent (%)");
+        ESP_LOGI(TAG, "Unitless Percent (%%)");
         break;
     case SENSOR_TYPE_ALTITUDE:
         ESP_LOGI(TAG, "Altitude (m)");
@@ -107,8 +107,8 @@ void Adafruit_Sensor::printSensorDetails(void)
         break;
     }
 
-    ESP_LOGI(TAG, "Driver Ver:   %d", sensor.version);
-    ESP_LOGI(TAG, "Unique ID:    %llu", sensor.sensor_id);
+    ESP_LOGI(TAG, "Driver Ver:   %ld", sensor.version);
+    ESP_LOGI(TAG, "Unique ID:    %ld", sensor.sensor_id);
     ESP_LOGI(TAG, "Min Value:    %f", sensor.min_value);
     ESP_LOGI(TAG, "Max Value:    %f", sensor.max_value);
     ESP_LOGI(TAG, "Resolution:   %f", sensor.resolution);
