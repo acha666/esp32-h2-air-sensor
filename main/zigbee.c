@@ -28,9 +28,9 @@ void ZigbeeTask(void *pvParameters)
     uint32_t ApplicationVersion = 0x0001;
     uint32_t StackVersion = 0x0002;
     uint32_t HWVersion = 0x0002;
-    uint8_t ManufacturerName[] = {14, 'G', 'a', 'm', 'm', 'a', 'T', 'r', 'o', 'n', 'i', 'q', 'u', 'e', 's'}; // warning: this is in format {length, 'string'} :
-    uint8_t ModelIdentifier[] = {4, 'D', 'e', 'm', 'o'};
-    uint8_t DateCode[] = {8, '2', '0', '2', '3', '0', '8', '2', '6'};
+    uint8_t ManufacturerName[] = {9, 'E', 's', 'p', 'r', 'e', 's', 's', 'i', 'f'}; // warning: this is in format {length, 'string'} :
+    uint8_t ModelIdentifier[] = {8, 'E', 'S', 'P', '3', '2', '-', 'H', '2'};
+    uint8_t DateCode[] = {8, '2', '0', '2', '4', '0', '3', '1', '6'};
     esp_zb_attribute_list_t *esp_zb_basic_cluster = esp_zb_basic_cluster_create(&basic_cluster_cfg);
     esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_APPLICATION_VERSION_ID, &ApplicationVersion);
     esp_zb_basic_cluster_add_attr(esp_zb_basic_cluster, ESP_ZB_ZCL_ATTR_BASIC_STACK_VERSION_ID, &StackVersion);
@@ -45,66 +45,57 @@ void ZigbeeTask(void *pvParameters)
     };
     esp_zb_attribute_list_t *esp_zb_identify_cluster = esp_zb_identify_cluster_create(&identify_cluster_cfg);
 
-    // ------------------------------ Cluster LIGHT ------------------------------
-    esp_zb_on_off_cluster_cfg_t on_off_cfg = {
-        .on_off = 0,
-    };
-    esp_zb_attribute_list_t *esp_zb_on_off_cluster = esp_zb_on_off_cluster_create(&on_off_cfg);
-
-    // ------------------------------ Cluster BINARY INPUT ------------------------------
-    esp_zb_binary_input_cluster_cfg_t binary_input_cfg = {
-        .out_of_service = 0,
-        .status_flags = 0,
-    };
-    uint8_t present_value = 0;
-    esp_zb_attribute_list_t *esp_zb_binary_input_cluster = esp_zb_binary_input_cluster_create(&binary_input_cfg);
-    esp_zb_binary_input_cluster_add_attr(esp_zb_binary_input_cluster, ESP_ZB_ZCL_ATTR_BINARY_INPUT_PRESENT_VALUE_ID, &present_value);
-
     // ------------------------------ Cluster Temperature ------------------------------
     esp_zb_temperature_meas_cluster_cfg_t temperature_meas_cfg = {
-        .measured_value = 0xFFFF,
+        .measured_value = 0x8000,
         .min_value = -50,
-        .max_value = 100,
+        .max_value = 150,
     };
+    uint16_t temperature_tolerance = CONFIG_PRJ_TEMP_SENSOR_TEMPERATURE_ABSOLUTE_PRECISION;
     esp_zb_attribute_list_t *esp_zb_temperature_meas_cluster = esp_zb_temperature_meas_cluster_create(&temperature_meas_cfg);
+    ESP_ERROR_CHECK(esp_zb_temperature_meas_cluster_add_attr(esp_zb_temperature_meas_cluster, ESP_ZB_ZCL_ATTR_TEMP_MEASUREMENT_TOLERANCE_ID, &temperature_tolerance));
 
     // ------------------------------ Cluster Humidity ------------------------------
     esp_zb_humidity_meas_cluster_cfg_t humidity_meas_cfg = {
         .measured_value = 0xFFFF,
         .min_value = 0,
-        .max_value = 100,
+        .max_value = 10000,
     };
+    uint16_t humidity_tolerance = CONFIG_PRJ_TEMP_SENSOR_HUMIDITY_ABSOLUTE_PRECISION;
     esp_zb_attribute_list_t *esp_zb_humidity_meas_cluster = esp_zb_humidity_meas_cluster_create(&humidity_meas_cfg);
+    ESP_ERROR_CHECK(esp_zb_humidity_meas_cluster_add_attr(esp_zb_humidity_meas_cluster, ESP_ZB_ZCL_ATTR_REL_HUMIDITY_TOLERANCE_ID, &humidity_tolerance));
 
     // ------------------------------ Cluster Pressure ------------------------------
     esp_zb_pressure_meas_cluster_cfg_t pressure_meas_cfg = {
-        .measured_value = 0xFFFF,
-        .min_value = 300,
-        .max_value = 1100,
+        .measured_value = 0x8000,
+        .min_value = 200,
+        .max_value = 1300,
     };
-    uint16_t pressure_scaled_value = 0xFFFF;
-    uint16_t pressure_min_scaled_value = 300;
-    uint16_t pressure_max_scaled_value = 1100;
-    uint8_t pressure_scale = 0;
+    uint16_t pressure_tolerance = (CONFIG_PRJ_PRESSURE_SENSOR_ABSOLUTE_PRECISION / 100.0 + 0.5);
+    int16_t pressure_scaled_value = 0x8000; // unit: 0.1hPa, scale=1
+    int16_t pressure_min_scaled_value = 2000;
+    int16_t pressure_max_scaled_value = 13000;
+    uint16_t pressure_scaled_tolerance = (CONFIG_PRJ_PRESSURE_SENSOR_ABSOLUTE_PRECISION / 10.0 + 0.5);
+    uint8_t pressure_scale = 1;
     esp_zb_attribute_list_t *esp_zb_pressure_meas_cluster = esp_zb_pressure_meas_cluster_create(&pressure_meas_cfg);
+    // ESP_ERROR_CHECK(esp_zb_pressure_meas_cluster_add_attr(esp_zb_pressure_meas_cluster, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_TOLERANCE_ID, &pressure_tolerance));  // not supported
     ESP_ERROR_CHECK(esp_zb_pressure_meas_cluster_add_attr(esp_zb_pressure_meas_cluster, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_SCALED_VALUE_ID, &pressure_scaled_value));
     ESP_ERROR_CHECK(esp_zb_pressure_meas_cluster_add_attr(esp_zb_pressure_meas_cluster, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_MIN_SCALED_VALUE_ID, &pressure_min_scaled_value));
     ESP_ERROR_CHECK(esp_zb_pressure_meas_cluster_add_attr(esp_zb_pressure_meas_cluster, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_MAX_SACLED_VALUE_ID, &pressure_max_scaled_value));
+    ESP_ERROR_CHECK(esp_zb_pressure_meas_cluster_add_attr(esp_zb_pressure_meas_cluster, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_SCALED_TOLERANCE_ID, &pressure_scaled_tolerance));
     ESP_ERROR_CHECK(esp_zb_pressure_meas_cluster_add_attr(esp_zb_pressure_meas_cluster, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_SCALE_ID, &pressure_scale));
 
     // ------------------------------ Create cluster list ------------------------------
     esp_zb_cluster_list_t *esp_zb_cluster_list = esp_zb_zcl_cluster_list_create();
     esp_zb_cluster_list_add_basic_cluster(esp_zb_cluster_list, esp_zb_basic_cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
     esp_zb_cluster_list_add_identify_cluster(esp_zb_cluster_list, esp_zb_identify_cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
-    esp_zb_cluster_list_add_on_off_cluster(esp_zb_cluster_list, esp_zb_on_off_cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
-    esp_zb_cluster_list_add_binary_input_cluster(esp_zb_cluster_list, esp_zb_binary_input_cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
     esp_zb_cluster_list_add_temperature_meas_cluster(esp_zb_cluster_list, esp_zb_temperature_meas_cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
     esp_zb_cluster_list_add_humidity_meas_cluster(esp_zb_cluster_list, esp_zb_humidity_meas_cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
     esp_zb_cluster_list_add_pressure_meas_cluster(esp_zb_cluster_list, esp_zb_pressure_meas_cluster, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE);
 
     // ------------------------------ Create endpoint list ------------------------------
     esp_zb_ep_list_t *esp_zb_ep_list = esp_zb_ep_list_create();
-    esp_zb_ep_list_add_ep(esp_zb_ep_list, esp_zb_cluster_list, HA_ESP_LIGHT_ENDPOINT, ESP_ZB_AF_HA_PROFILE_ID, ESP_ZB_HA_ON_OFF_LIGHT_DEVICE_ID);
+    esp_zb_ep_list_add_ep(esp_zb_ep_list, esp_zb_cluster_list, HA_SENSOR_ENDPOINT, ESP_ZB_AF_HA_PROFILE_ID, ESP_ZB_HA_SIMPLE_SENSOR_DEVICE_ID);
 
     // ------------------------------ Register Device ------------------------------
     esp_zb_device_register(esp_zb_ep_list);
@@ -115,7 +106,7 @@ void ZigbeeTask(void *pvParameters)
     esp_zb_main_loop_iteration();
 }
 
-esp_err_t reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID, void *value, uint8_t value_length)
+esp_err_t reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID, void *value)
 {
     esp_zb_zcl_status_t status;
     status = esp_zb_zcl_set_attribute_val(endpoint, clusterID, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE, attributeID, value, false);
@@ -126,25 +117,25 @@ esp_err_t reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attribu
         return ESP_FAIL;
     }
 
-    esp_zb_zcl_report_attr_cmd_t cmd = {
-        .zcl_basic_cmd = {
-            .dst_addr_u.addr_short = 0x0000,
-            .dst_endpoint = endpoint,
-            .src_endpoint = endpoint,
-        },
-        .address_mode = ESP_ZB_APS_ADDR_MODE_16_ENDP_PRESENT,
-        .clusterID = clusterID,
-        .attributeID = attributeID,
-        .cluster_role = ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-    };
+    // esp_zb_zcl_report_attr_cmd_t cmd = {
+    //     .zcl_basic_cmd = {
+    //         .dst_addr_u.addr_short = 0x0000,
+    //         .dst_endpoint = endpoint,
+    //         .src_endpoint = endpoint,
+    //     },
+    //     .address_mode = ESP_ZB_APS_ADDR_MODE_16_ENDP_PRESENT,
+    //     .clusterID = clusterID,
+    //     .attributeID = attributeID,
+    //     .cluster_role = ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+    // };
 
-    status = esp_zb_zcl_report_attr_cmd_req(&cmd);
+    // status = esp_zb_zcl_report_attr_cmd_req(&cmd);
 
-    if (status != ESP_ZB_ZCL_STATUS_SUCCESS)
-    {
-        ESP_LOGE(TAG, "Updating attribute %04x:%04x failed(0x%02x)!", clusterID, attributeID, status);
-        return ESP_FAIL;
-    }
+    // if (status != ESP_ZB_ZCL_STATUS_SUCCESS)
+    // {
+    //     ESP_LOGE(TAG, "Updating attribute %04x:%04x failed(0x%02x)!", clusterID, attributeID, status);
+    //     return ESP_FAIL;
+    // }
 
     return ESP_OK;
 }
@@ -152,24 +143,23 @@ esp_err_t reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attribu
 static esp_err_t zb_attribute_handler(const esp_zb_zcl_set_attr_value_message_t *message)
 {
     esp_err_t ret = ESP_OK;
-    bool light_state = 0;
     ESP_RETURN_ON_FALSE(message, ESP_FAIL, TAG, "Empty message");
     ESP_RETURN_ON_FALSE(message->info.status == ESP_ZB_ZCL_STATUS_SUCCESS, ESP_ERR_INVALID_ARG, TAG, "Received message: error status(%d)",
                         message->info.status);
     ESP_LOGI(TAG, "Received message: endpoint(0x%x), cluster(0x%x), attribute(0x%x), data size(%d)", message->info.dst_endpoint, message->info.cluster,
              message->attribute.id, message->attribute.data.size);
-    if (message->info.dst_endpoint == HA_ESP_LIGHT_ENDPOINT)
-    {
-        if (message->info.cluster == ESP_ZB_ZCL_CLUSTER_ID_ON_OFF)
-        {
-            if (message->attribute.id == ESP_ZB_ZCL_ATTR_ON_OFF_ON_OFF_ID && message->attribute.data.type == ESP_ZB_ZCL_ATTR_TYPE_BOOL)
-            {
-                light_state = message->attribute.data.value ? *(bool *)message->attribute.data.value : light_state;
-                gpio_set_level(GPIO_NUM_0, light_state);
-                ESP_LOGI(TAG, "Light sets to %s", light_state ? "On" : "Off");
-            }
-        }
-    }
+    // if (message->info.dst_endpoint == HA_SENSOR_ENDPOINT)
+    // {
+    //     if (message->info.cluster == ESP_ZB_ZCL_CLUSTER_ID_ON_OFF)
+    //     {
+    //         if (message->attribute.id == ESP_ZB_ZCL_ATTR_ON_OFF_ON_OFF_ID && message->attribute.data.type == ESP_ZB_ZCL_ATTR_TYPE_BOOL)
+    //         {
+    //             light_state = message->attribute.data.value ? *(bool *)message->attribute.data.value : light_state;
+    //             gpio_set_level(GPIO_NUM_0, light_state);
+    //             ESP_LOGI(TAG, "Light sets to %s", light_state ? "On" : "Off");
+    //         }
+    //     }
+    // }
     return ret;
 }
 
@@ -228,7 +218,6 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
                      extended_pan_id[7], extended_pan_id[6], extended_pan_id[5], extended_pan_id[4],
                      extended_pan_id[3], extended_pan_id[2], extended_pan_id[1], extended_pan_id[0],
                      esp_zb_get_pan_id(), esp_zb_get_current_channel());
-            xTaskCreate(button_task, "button_task", 4096, NULL, 5, NULL);
             xTaskCreate(MainTask, "Main_Task", 4096, NULL, 5, NULL);
         }
         else

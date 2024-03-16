@@ -7,7 +7,6 @@
 extern TaskHandle_t tempSensorTaskHandle;
 extern QueueHandle_t sensorDataQueue;
 
-void button_task(void *pvParameters);
 void MainTask(void *pvParameters);
 
 #endif

@@ -11,27 +11,10 @@
 
 QueueHandle_t sensorDataQueue;
 TaskHandle_t tempSensorTaskHandle = NULL;
-static const char *TAG = "DEMO";
-
-void button_task(void *pvParameters)
-{
-    uint8_t last_state = 0;
-    while (1)
-    {
-        uint8_t button_state = gpio_get_level(GPIO_NUM_12);
-        if (button_state != last_state)
-        {
-            ESP_LOGI(TAG, "Button changed: %d", button_state);
-            last_state = button_state;
-            reportAttribute(HA_ESP_LIGHT_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_BINARY_INPUT, ESP_ZB_ZCL_ATTR_BINARY_INPUT_PRESENT_VALUE_ID, &button_state, 1);
-        }
-        vTaskDelay(100 / portTICK_PERIOD_MS);
-    }
-}
+static const char *TAG = "Main";
 
 void MainTask(void *pvParameters)
 {
-    static const char TAG[] = "MainTask";
     static sensorData_t data;
     while (1)
     {
@@ -41,37 +24,23 @@ void MainTask(void *pvParameters)
         if (xQueueReceive(sensorDataQueue, &data, pdMS_TO_TICKS(5000)) == pdPASS)
         {
             ESP_LOGI(TAG, "Hum: %.2f Tmp: %.2f Pre: %.2f", data.humidity, data.temperature, data.pressure);
-            uint16_t temperature_int = data.temperature * 100;
-            uint16_t humidity_int = data.humidity * 100;
 
-            reportAttribute(HA_ESP_LIGHT_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_TEMP_MEASUREMENT, ESP_ZB_ZCL_ATTR_TEMP_MEASUREMENT_VALUE_ID, &temperature_int, 2);
-            reportAttribute(HA_ESP_LIGHT_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_REL_HUMIDITY_MEASUREMENT, ESP_ZB_ZCL_ATTR_REL_HUMIDITY_MEASUREMENT_VALUE_ID, &humidity_int, 2);
-
-            int16_t pressure_hpa_int = data.pressure;
-            int16_t pressure_0_1_hpa_int = data.pressure * 10;
-            uint8_t pressure_scale = 1;
-
-            reportAttribute(HA_ESP_LIGHT_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_PRESSURE_MEASUREMENT, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_VALUE_ID, &pressure_hpa_int, 2); // basic
-
-            reportAttribute(HA_ESP_LIGHT_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_PRESSURE_MEASUREMENT, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_SCALED_VALUE_ID, &pressure_0_1_hpa_int, 2);
-            reportAttribute(HA_ESP_LIGHT_ENDPOINT, ESP_ZB_ZCL_CLUSTER_ID_PRESSURE_MEASUREMENT, ESP_ZB_ZCL_ATTR_PRESSURE_MEASUREMENT_SCALE_ID, &pressure_scale, 1);
+            app_zb_report_temperature(data.temperature);
+            app_zb_report_humidity(data.humidity);
+            app_zb_report_pressure(data.pressure);
         }
         else
         {
-            ESP_LOGE(TAG, "No data from temperature sensor");
+            ESP_LOGE(TAG, "No data from sensor");
         }
-        vTaskDelay(5000 / portTICK_PERIOD_MS);
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
     }
 }
 
-void I2CScanTask()
+void I2CScanTask(int i2c_gpio_sda, int i2c_gpio_scl)
 {
     i2c_master_bus_handle_t tool_bus_handle;
     i2c_port_t i2c_port = I2C_NUM_0;
-    // int i2c_gpio_sda = 2;
-    // int i2c_gpio_scl = 3;
-    int i2c_gpio_sda = 26;
-    int i2c_gpio_scl = 27;
 
     i2c_master_bus_config_t i2c_bus_config = {
         .clk_source = I2C_CLK_SRC_DEFAULT,
@@ -112,12 +81,13 @@ void I2CScanTask()
 
     ESP_ERROR_CHECK(i2c_del_master_bus(tool_bus_handle));
 
-    vTaskDelete(NULL);
+    // vTaskDelete(NULL);
 }
 
 void app_main(void)
 {
-    // xTaskCreate(I2CScanTask, "I2C_Scan_Task", 4096, NULL, 5, NULL);
+    I2CScanTask(26,27);
+    I2CScanTask(2,3);
 
     sensorDataQueue = xQueueCreate(10, sizeof(sensorData_t));
     assert(sensorDataQueue != NULL);
@@ -133,7 +103,4 @@ void app_main(void)
 
     xTaskCreate(ZigbeeTask, "Zigbee_Task", 4096, NULL, 5, NULL);
     xTaskCreate(SensorInitTask, "Temp_Sensor_Init_Task", 4096, NULL, 5, NULL);
-
-    gpio_set_direction(GPIO_NUM_12, GPIO_MODE_INPUT);
-    gpio_set_pull_mode(GPIO_NUM_12, GPIO_PULLUP_ONLY);
 }

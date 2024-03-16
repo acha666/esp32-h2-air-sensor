@@ -12,50 +12,6 @@ choice
         bool "HDC302x"
 endchoice
 
-config PRJ_TEMP_SENSOR_SHT4x_ADDR
-    hex "I2C address for SHT4x"
-    default 0x44
-    depends on PRJ_TEMP_SENSOR_SHT4x
-
-choice
-    prompt "SHT4x percision level"
-    default PRJ_TEMP_SENSOR_SHT4x_MED_PRECISION
-    depends on PRJ_TEMP_SENSOR_SHT4x
-
-    config PRJ_TEMP_SENSOR_SHT4x_LOW_PRECISION
-        bool "Low precision"
-    config PRJ_TEMP_SENSOR_SHT4x_MED_PRECISION
-        bool "Medium precision"
-    config PRJ_TEMP_SENSOR_SHT4x_HIGH_PRECISION
-        bool "High precision"  
-endchoice
-
-choice
-    prompt "SHT4x heater level"
-    default PRJ_TEMP_SENSOR_SHT4x_NO_HEATER
-    depends on PRJ_TEMP_SENSOR_SHT4x
-
-    config PRJ_TEMP_SENSOR_SHT4x_NO_HEATER
-        bool "No heater"
-    config PRJ_TEMP_SENSOR_SHT4x_LOW_HEATER_100MS
-        bool "Low heater 100ms"
-    config PRJ_TEMP_SENSOR_SHT4x_MED_HEATER_100MS
-        bool "Medium heater 100ms"
-    config PRJ_TEMP_SENSOR_SHT4x_HIGH_HEATER_100MS
-        bool "High heater 100ms"
-    
-endchoice
-
-config PRJ_TEMP_SENSOR_SHT3x_ADDR
-    hex "I2C address for SHT3x"
-    default 0x44
-    depends on PRJ_TEMP_SENSOR_SHT3x
-
-config PRJ_TEMP_SENSOR_HDC302x_ADDR
-    hex "I2C address for HDC302x"
-    default 0x44
-    depends on PRJ_TEMP_SENSOR_HDC302x
-
 choice 
     prompt "Select the pressure sensor to use"
     default PRJ_PRESSURE_SENSOR_LPS22HH
@@ -64,12 +20,126 @@ choice
         bool "LPS22HH"
     config PRJ_PRESSURE_SENSOR_LPS22HB
         bool "LPS22HB"
-
+    config PRJ_PRESSURE_SENSOR_LPS22DF
+        bool "LPS22DF"
 endchoice
 
+menu "SHT4x Configuration"
+    depends on PRJ_TEMP_SENSOR_SHT4x
+    
+    choice
+        prompt "Select the SHT4x sensor type"
+        default PRJ_TEMP_SENSOR_SHT4X_TYPE_SHT40
+        
+        config PRJ_TEMP_SENSOR_SHT4X_TYPE_SHT40
+            bool "SHT40"
+        config PRJ_TEMP_SENSOR_SHT4X_TYPE_SHT41
+            bool "SHT41"
+        config PRJ_TEMP_SENSOR_SHT4X_TYPE_SHT45
+            bool "SHT45"
+    endchoice
+
+    config PRJ_TEMP_SENSOR_SHT4x_ADDR
+        hex "7-bits I2C address for SHT4x"
+        default 0x44
+
+    choice
+        prompt "SHT4x percision level"
+        default PRJ_TEMP_SENSOR_SHT4x_HIGH_PRECISION
+
+        config PRJ_TEMP_SENSOR_SHT4x_LOW_PRECISION
+            bool "Low precision"
+        config PRJ_TEMP_SENSOR_SHT4x_MED_PRECISION
+            bool "Medium precision"
+        config PRJ_TEMP_SENSOR_SHT4x_HIGH_PRECISION
+            bool "High precision"  
+    endchoice
+
+    choice
+        prompt "SHT4x heater level"
+        default PRJ_TEMP_SENSOR_SHT4x_NO_HEATER
+
+        config PRJ_TEMP_SENSOR_SHT4x_NO_HEATER
+            bool "No heater"
+        config PRJ_TEMP_SENSOR_SHT4x_LOW_HEATER_100MS
+            bool "Low heater 100ms"
+        config PRJ_TEMP_SENSOR_SHT4x_MED_HEATER_100MS
+            bool "Medium heater 100ms"
+        config PRJ_TEMP_SENSOR_SHT4x_HIGH_HEATER_100MS
+            bool "High heater 100ms"
+    endchoice
+
+endmenu
+
+menu "SHT3x Configuration"
+    depends on PRJ_TEMP_SENSOR_SHT3x
+
+    choice
+        prompt "Select the SHT3x sensor type"
+        default PRJ_TEMP_SENSOR_SHT3x_TYPE_SHT30
+
+        config PRJ_TEMP_SENSOR_SHT3x_TYPE_SHT30
+            bool "SHT30"
+        config PRJ_TEMP_SENSOR_SHT3x_TYPE_SHT31
+            bool "SHT31"
+        config PRJ_TEMP_SENSOR_SHT3x_TYPE_SHT35
+            bool "SHT35"
+    endchoice
+
+    config PRJ_TEMP_SENSOR_SHT3x_ADDR
+        hex "7-bits I2C address for SHT3x"
+        default 0x44
+endmenu
+
+
+menu "HDC302x Configuration"
+    depends on PRJ_TEMP_SENSOR_HDC302x
+
+    config PRJ_TEMP_SENSOR_HDC302x_ADDR
+        hex "7-bits I2C address for HDC302x"
+        default 0x44
+endmenu
+
+# -------------------- Temperature Sensor Precision ---------------------
+# Unit: 0.01 degree Celsius
+config PRJ_TEMP_SENSOR_TEMPERATURE_ABSOLUTE_PRECISION
+    int
+    default 20 if PRJ_TEMP_SENSOR_SHT4X_TYPE_SHT40
+    default 20 if PRJ_TEMP_SENSOR_SHT4X_TYPE_SHT41
+    default 10 if PRJ_TEMP_SENSOR_SHT4X_TYPE_SHT45
+    default 20 if PRJ_TEMP_SENSOR_SHT3x_TYPE_SHT30
+    default 20 if PRJ_TEMP_SENSOR_SHT3x_TYPE_SHT31
+    default 10 if PRJ_TEMP_SENSOR_SHT3x_TYPE_SHT35
+    default 10 if PRJ_TEMP_SENSOR_HDC302x
+
+# Unit: 0.01 %RH
+config PRJ_TEMP_SENSOR_HUMIDITY_ABSOLUTE_PRECISION
+    int
+    default 180 if PRJ_TEMP_SENSOR_SHT4X_TYPE_SHT40
+    default 180 if PRJ_TEMP_SENSOR_SHT4X_TYPE_SHT41
+    default 100 if PRJ_TEMP_SENSOR_SHT4X_TYPE_SHT45
+    default 200 if PRJ_TEMP_SENSOR_SHT3x_TYPE_SHT30
+    default 200 if PRJ_TEMP_SENSOR_SHT3x_TYPE_SHT31
+    default 150 if PRJ_TEMP_SENSOR_SHT3x_TYPE_SHT35
+    default 50 if PRJ_TEMP_SENSOR_HDC302x
+
+
+# Define PRJ_PRESSURE_SENSOR_LPS22 when any of the LPS22 series sensor is selected
+config PRJ_PRESSURE_SENSOR_LPS22
+    bool
+    default y if PRJ_PRESSURE_SENSOR_LPS22HH || PRJ_PRESSURE_SENSOR_LPS22HB || PRJ_PRESSURE_SENSOR_LPS22DF
+
 config PRJ_PRESSURE_SENSOR_LPS22_ADDR
-    hex "I2C address for LPS22"
-    default 0x5D
-    depends on PRJ_PRESSURE_SENSOR_LPS22HH || PRJ_PRESSURE_SENSOR_LPS22HB
+    hex "7-bits I2C address for LPS22"
+    default 0x5C
+    depends on PRJ_PRESSURE_SENSOR_LPS22
+
+# Define macros for pressure sensor precision based on the selected model
+# Unit: Pa
+config PRJ_PRESSURE_SENSOR_ABSOLUTE_PRECISION
+    int
+    default 20 if PRJ_PRESSURE_SENSOR_LPS22DF
+    default 50 if PRJ_PRESSURE_SENSOR_LPS22HH
+    default 100 if PRJ_PRESSURE_SENSOR_LPS22HB
 
 endmenu
