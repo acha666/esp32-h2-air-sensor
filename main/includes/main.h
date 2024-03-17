@@ -6,6 +6,7 @@
 
 extern TaskHandle_t tempSensorTaskHandle;
 extern QueueHandle_t sensorDataQueue;
+extern SemaphoreHandle_t xI2CSemaphore;
 
 void MainTask(void *pvParameters);
 

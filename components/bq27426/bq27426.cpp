@@ -16,32 +16,54 @@ Arduino Uno (any 'duino should do)
 #include "bq27426.h"
 #include "bq27426_defs.h"
 #include "driver/i2c_master.h"
+#include "freertos/FreeRTOS.h"
+#include "esp_log.h"
 #include "string.h"
 
 #define constrain(amt, low, high) ((amt) < (low) ? (low) : ((amt) > (high) ? (high) : (amt)))
 
+#define TAG "BQ27426"
 
 /*****************************************************************************
  ************************** Initialization Functions *************************
  *****************************************************************************/
 // Initializes class variables
-BQ27426::BQ27426() : _deviceAddress(BQ72441_I2C_ADDRESS), _sealFlag(false), _userConfigControl(false)
+BQ27426::BQ27426()
 {
 }
 
 // Initializes I2C and verifies communication with the BQ27426.
-bool BQ27426::begin(void)
+esp_err_t BQ27426::begin(i2c_master_bus_handle_t i2c_master_bus, uint8_t address)
 {
+
+    esp_err_t ret;
     uint16_t deviceID = 0;
 
+    _i2cBus = i2c_master_bus;
+
+    ret = i2c_master_probe(_i2cBus, address, 500); // check if the device is connected
+    ESP_LOGI(TAG, "Probe result: %d", ret);
+
+    i2c_device_config_t dev_cfg = {
+        .dev_addr_length = I2C_ADDR_BIT_LEN_7,
+        .device_address = address,
+        .scl_speed_hz = 100000,
+    };
+    ret = i2c_master_bus_add_device(_i2cBus, &dev_cfg, &_i2cDevice);
+    if (ret != ESP_OK)
+    {
+        return ret;
+    }
+
     deviceID = deviceType(); // Read deviceType from BQ27426
+    ESP_LOGI(TAG, "Device ID: 0x%04X", deviceID);
 
     if (deviceID == BQ27426_DEVICE_ID)
     {
-        return true; // If device ID is valid, return true
+        return ESP_OK; // If device ID is valid, return true
     }
 
-    return false; // Otherwise return false
+    return ESP_ERR_INVALID_RESPONSE; // Otherwise return false
 }
 
 // Configures the design capacity of the connected battery.
@@ -166,7 +188,8 @@ uint16_t BQ27426::capacity(capacity_measure type)
         capacity = readWord(BQ27426_COMMAND_FULL_CAP_UNFL);
         break;
     case DESIGN:
-        capacity = readWord(BQ27426_EXTENDED_CAPACITY);
+        return readWord(BQ27426_COMMAND_FULL_CAPACITY); // need to fix
+        // capacity = readWord(BQ27426_EXTENDED_CAPACITY);
     }
 
     return capacity;
@@ -419,7 +442,8 @@ bool BQ27426::enterConfig(bool userControl)
     {
         int16_t timeout = BQ72441_I2C_TIMEOUT;
         while ((timeout--) && (!(flags() & BQ27426_FLAG_CFGUPMODE)))
-            delay(1);
+            // delay(1);
+            vTaskDelay(1);
 
         if (timeout > 0)
             return true;
@@ -444,7 +468,8 @@ bool BQ27426::exitConfig(bool resim)
         {
             int16_t timeout = BQ72441_I2C_TIMEOUT;
             while ((timeout--) && ((flags() & BQ27426_FLAG_CFGUPMODE)))
-                delay(1);
+                // delay(1);
+                vTaskDelay(1);
             if (timeout > 0)
             {
                 if (_sealFlag)
@@ -456,7 +481,7 @@ bool BQ27426::exitConfig(bool resim)
     }
     else
     {
-        return executeControlWord(BQ27426_CONTROL_EXIT_CFGUPDATE);
+        return executeControlWord(BQ27426_CONTROL_SOFT_RESET);
     }
 }
 
@@ -499,11 +524,11 @@ bool BQ27426::unseal(void)
     return false;
 }
 
-// Read the 16-bit opConfig register from extended data
-uint16_t BQ27426::opConfig(void)
-{
-    return readWord(BQ27426_EXTENDED_OPCONFIG);
-}
+// // Read the 16-bit opConfig register from extended data
+// uint16_t BQ27426::opConfig(void)
+// {
+//     return readWord(BQ27426_EXTENDED_OPCONFIG);
+// }
 
 // Write the 16-bit opConfig register in extended data
 bool BQ27426::writeOpConfig(uint16_t value)
@@ -538,9 +563,9 @@ uint16_t BQ27426::readControlWord(uint16_t function)
     uint8_t command[2] = {subCommandLSB, subCommandMSB};
     uint8_t data[2] = {0, 0};
 
-    i2cWriteBytes((uint8_t)0, command, 2);
+    i2cWriteBytes(BQ27426_COMMAND_CONTROL, command, 2);
 
-    if (i2cReadBytes((uint8_t)0, data, 2))
+    if (i2cReadBytes(BQ27426_COMMAND_CONTROL, data, 2))
     {
         return ((uint16_t)data[1] << 8) | data[0];
     }
@@ -556,7 +581,7 @@ bool BQ27426::executeControlWord(uint16_t function)
     uint8_t command[2] = {subCommandLSB, subCommandMSB};
     uint8_t data[2] = {0, 0};
 
-    if (i2cWriteBytes((uint8_t)0, command, 2))
+    if (i2cWriteBytes(BQ27426_COMMAND_CONTROL, command, 2))
         return true;
 
     return false;
@@ -702,9 +727,8 @@ bool BQ27426::writeExtendedData(uint8_t classID, uint8_t offset, uint8_t *data, 
 // Read a specified number of bytes over I2C at a given subAddress
 int16_t BQ27426::i2cReadBytes(uint8_t subAddress, uint8_t *dest, uint8_t count)
 {
-    i2c_master_transmit_receive(_i2cDevice, &subAddress, 1, dest, count, _timeout);
 
-    return ESP_OK;
+    return i2c_master_transmit_receive(_i2cDevice, &subAddress, 1, dest, count, _timeout);
 }
 
 // Write a specified number of bytes over I2C to a given subAddress
@@ -715,7 +739,5 @@ uint16_t BQ27426::i2cWriteBytes(uint8_t subAddress, uint8_t *src, uint8_t count)
     memcpy(write_buffer, &subAddress, 1);
     memcpy(write_buffer + 1, src, count);
 
-    i2c_master_transmit(_i2cDevice, write_buffer, write_size, _timeout);
-
-    return ESP_OK;
+    return i2c_master_transmit(_i2cDevice, write_buffer, write_size, _timeout);
 }

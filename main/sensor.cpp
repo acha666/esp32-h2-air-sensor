@@ -62,9 +62,11 @@ extern "C" void SensorTask(void *pvParameters)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
+        assert(xSemaphoreTake(xI2CSemaphore, 5000 / portTICK_PERIOD_MS) == pdTRUE);
         temp_sensor->getEvent(&temp_event);
         humidity_sensor->getEvent(&humidity_event);
         pressure_sensor->getEvent(&pressure_event);
+        xSemaphoreGive(xI2CSemaphore);
 
         data.temperature = temp_event.temperature;
         data.humidity = humidity_event.relative_humidity;
@@ -85,7 +87,9 @@ static void sensor_i2c_init(void)
         .glitch_ignore_cnt = 7,
     };
 
+    assert(xSemaphoreTake(xI2CSemaphore, 5000 / portTICK_PERIOD_MS) == pdTRUE);
     ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_config, &sensor_i2c_master_bus_handle));
+    xSemaphoreGive(xI2CSemaphore);
 
     return;
 }
@@ -94,8 +98,10 @@ static void sht4x_init(void)
 {
     uint8_t sht4x_addr = CONFIG_PRJ_TEMP_SENSOR_SHT4x_ADDR;
 
+    assert(xSemaphoreTake(xI2CSemaphore, 5000 / portTICK_PERIOD_MS) == pdTRUE);
     ESP_ERROR_CHECK(sht4x.begin(sensor_i2c_master_bus_handle, sht4x_addr));
     uint32_t serial = sht4x.readSerial();
+    xSemaphoreGive(xI2CSemaphore);
     ESP_LOGI(TAG, "SHT4x Serial: %lu", serial);
 
 #ifdef CONFIG_PRJ_TEMP_SENSOR_SHT4x_NO_HEATER
@@ -124,9 +130,10 @@ static void lps22_init(void)
 {
     uint8_t lps22_addr = CONFIG_PRJ_PRESSURE_SENSOR_LPS22_ADDR;
 
+    assert(xSemaphoreTake(xI2CSemaphore, 5000 / portTICK_PERIOD_MS) == pdTRUE);
     ESP_ERROR_CHECK(lps22.begin_I2C(sensor_i2c_master_bus_handle, lps22_addr));
-
     lps22.setDataRate(LPS22_RATE_10_HZ);
+    xSemaphoreGive(xI2CSemaphore);
 
     pressure_temp_sensor = lps22.getTemperatureSensor();
     pressure_sensor = lps22.getPressureSensor();

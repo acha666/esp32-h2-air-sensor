@@ -7,10 +7,13 @@
 
 #include "main.h"
 #include "sensor.h"
+#include "power.h"
 #include "zigbee.h"
 
 QueueHandle_t sensorDataQueue;
 TaskHandle_t tempSensorTaskHandle = NULL;
+SemaphoreHandle_t xI2CSemaphore = NULL;
+
 static const char *TAG = "Main";
 
 void MainTask(void *pvParameters)
@@ -90,6 +93,7 @@ void app_main(void)
     I2CScanTask(2,3);
 
     sensorDataQueue = xQueueCreate(10, sizeof(sensorData_t));
+    xI2CSemaphore = xSemaphoreCreateMutex();
     assert(sensorDataQueue != NULL);
 
     esp_zb_platform_config_t config = {
@@ -103,4 +107,5 @@ void app_main(void)
 
     xTaskCreate(ZigbeeTask, "Zigbee_Task", 4096, NULL, 5, NULL);
     xTaskCreate(SensorInitTask, "Temp_Sensor_Init_Task", 4096, NULL, 5, NULL);
+    xTaskCreate(PowerTask, "Power_Task", 4096, NULL, 5, NULL);
 }
