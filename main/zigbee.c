@@ -106,7 +106,7 @@ void ZigbeeTask(void *pvParameters)
     esp_zb_main_loop_iteration();
 }
 
-esp_err_t reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID, void *value)
+esp_err_t writeAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID, void *value)
 {
     esp_zb_zcl_status_t status;
     status = esp_zb_zcl_set_attribute_val(endpoint, clusterID, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE, attributeID, value, false);
@@ -117,25 +117,30 @@ esp_err_t reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attribu
         return ESP_FAIL;
     }
 
-    // esp_zb_zcl_report_attr_cmd_t cmd = {
-    //     .zcl_basic_cmd = {
-    //         .dst_addr_u.addr_short = 0x0000,
-    //         .dst_endpoint = endpoint,
-    //         .src_endpoint = endpoint,
-    //     },
-    //     .address_mode = ESP_ZB_APS_ADDR_MODE_16_ENDP_PRESENT,
-    //     .clusterID = clusterID,
-    //     .attributeID = attributeID,
-    //     .cluster_role = ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
-    // };
+    return ESP_OK;
+}
 
-    // status = esp_zb_zcl_report_attr_cmd_req(&cmd);
+esp_err_t reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID)
+{
+    esp_zb_zcl_status_t status;
+    esp_zb_zcl_report_attr_cmd_t cmd = {
+        .zcl_basic_cmd = {
+            .dst_addr_u.addr_short = 0x0000,
+            .dst_endpoint = endpoint,
+            .src_endpoint = endpoint,
+        },
+        .address_mode = ESP_ZB_APS_ADDR_MODE_16_ENDP_PRESENT,
+        .clusterID = clusterID,
+        .attributeID = attributeID,
+        .cluster_role = ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+    };
+    status = esp_zb_zcl_report_attr_cmd_req(&cmd);
 
-    // if (status != ESP_ZB_ZCL_STATUS_SUCCESS)
-    // {
-    //     ESP_LOGE(TAG, "Updating attribute %04x:%04x failed(0x%02x)!", clusterID, attributeID, status);
-    //     return ESP_FAIL;
-    // }
+    if (status != ESP_ZB_ZCL_STATUS_SUCCESS)
+    {
+        ESP_LOGE(TAG, "Updating attribute %04x:%04x failed(0x%02x)!", clusterID, attributeID, status);
+        return ESP_FAIL;
+    }
 
     return ESP_OK;
 }

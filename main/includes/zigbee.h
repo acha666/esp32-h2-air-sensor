@@ -7,7 +7,8 @@ extern "C"
 #endif
 
     void ZigbeeTask(void *pvParameters);
-    esp_err_t reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID, void *value);
+    esp_err_t writeAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID, void *value);
+    esp_err_t reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID);
 
     void app_zb_report_temperature(float temperature_c);
     void app_zb_report_humidity(float humidity_percent);

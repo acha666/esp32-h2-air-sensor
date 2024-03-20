@@ -89,23 +89,24 @@ void I2CScanTask(int i2c_gpio_sda, int i2c_gpio_scl)
 
 void app_main(void)
 {
-    I2CScanTask(26,27);
-    I2CScanTask(2,3);
+    while(1);
+    // I2CScanTask(26,27);
+    // // I2CScanTask(2,3);
 
-    sensorDataQueue = xQueueCreate(10, sizeof(sensorData_t));
-    xI2CSemaphore = xSemaphoreCreateMutex();
-    assert(sensorDataQueue != NULL);
+    // sensorDataQueue = xQueueCreate(10, sizeof(sensorData_t));
+    // xI2CSemaphore = xSemaphoreCreateMutex();
+    // assert(sensorDataQueue != NULL);
 
-    esp_zb_platform_config_t config = {
-        .radio_config = ESP_ZB_DEFAULT_RADIO_CONFIG(),
-        .host_config = ESP_ZB_DEFAULT_HOST_CONFIG(),
-    };
-    ESP_ERROR_CHECK(nvs_flash_init());
-    /* load Zigbee light_bulb platform config to initialization */
-    ESP_ERROR_CHECK(esp_zb_platform_config(&config));
-    /* hardware related and device init */
+    // esp_zb_platform_config_t config = {
+    //     .radio_config = ESP_ZB_DEFAULT_RADIO_CONFIG(),
+    //     .host_config = ESP_ZB_DEFAULT_HOST_CONFIG(),
+    // };
+    // ESP_ERROR_CHECK(nvs_flash_init());
+    // /* load Zigbee light_bulb platform config to initialization */
+    // ESP_ERROR_CHECK(esp_zb_platform_config(&config));
+    // /* hardware related and device init */
 
-    xTaskCreate(ZigbeeTask, "Zigbee_Task", 4096, NULL, 5, NULL);
-    xTaskCreate(SensorInitTask, "Temp_Sensor_Init_Task", 4096, NULL, 5, NULL);
-    xTaskCreate(PowerTask, "Power_Task", 4096, NULL, 5, NULL);
+    // xTaskCreate(ZigbeeTask, "Zigbee_Task", 4096, NULL, 5, NULL);
+    // xTaskCreate(SensorInitTask, "Temp_Sensor_Init_Task", 4096, NULL, 5, NULL);
+    // xTaskCreate(PowerTask, "Power_Task", 4096, NULL, 5, NULL);
 }

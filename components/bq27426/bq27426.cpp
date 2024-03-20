@@ -41,12 +41,13 @@ esp_err_t BQ27426::begin(i2c_master_bus_handle_t i2c_master_bus, uint8_t address
 
     _i2cBus = i2c_master_bus;
 
-    ret = i2c_master_probe(_i2cBus, address, 500); // check if the device is connected
+    ESP_LOGI(TAG, "Initializing BQ27426, address: 0x%02X", address);
+    ret = i2c_master_probe(_i2cBus, 0X55, 500); // check if the device is connected
     ESP_LOGI(TAG, "Probe result: %d", ret);
 
     i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
-        .device_address = address,
+        .device_address = 0x55,
         .scl_speed_hz = 100000,
     };
     ret = i2c_master_bus_add_device(_i2cBus, &dev_cfg, &_i2cDevice);

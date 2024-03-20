@@ -10,6 +10,8 @@ extern "C"
 
     void PowerTask(void *pvParameters);
 
+    void BQScanTask();
+
 #ifdef __cplusplus
 }
 #endif
