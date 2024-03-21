@@ -71,7 +71,7 @@ void ZigbeeTask(void *pvParameters)
         .min_value = 200,
         .max_value = 1300,
     };
-    uint16_t pressure_tolerance = (CONFIG_PRJ_PRESSURE_SENSOR_ABSOLUTE_PRECISION / 100.0 + 0.5);
+    // uint16_t pressure_tolerance = (CONFIG_PRJ_PRESSURE_SENSOR_ABSOLUTE_PRECISION / 100.0 + 0.5);
     int16_t pressure_scaled_value = 0x8000; // unit: 0.1hPa, scale=1
     int16_t pressure_min_scaled_value = 2000;
     int16_t pressure_max_scaled_value = 13000;

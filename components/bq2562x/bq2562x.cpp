@@ -40,7 +40,7 @@
 
 using std::runtime_error;
 
-constexpr char *TAG = "BQ2562x";
+constexpr const char *TAG = "BQ2562x";
 constexpr bool DEBUG_OUTPUT_EN = true;
 
 BQ2562x::BQ2562x(i2c_master_bus_handle_t bus_handle, uint8_t address)
@@ -63,16 +63,19 @@ BQ2562x::BQ2562x(i2c_master_bus_handle_t bus_handle, uint8_t address)
     if (ret != ESP_OK)
         throw runtime_error("Failed to add BQ2562x to I2C bus");
 
-    ret = reset();
-    if (ret != ESP_OK)
-        throw runtime_error("Failed to reset BQ2562x");
+    _initRegisters();
+
+    resetRegister();
+    uint8_t pn = getPartNumber(), rev = getDeviceRevision();
+
+    ESP_LOGI(TAG, "Found Part ID: 0x%02x, Revision: 0x%02x", pn, rev);
 }
 
 BQ2562x::~BQ2562x()
 {
-    if (i2c_master_bus_rm_device(_i2cDevice) != ESP_OK)
-        throw runtime_error("Failed to remove BQ2562x from I2C bus");
+    i2c_master_bus_rm_device(_i2cDevice);
 }
+
 void BQ2562x::_initRegisters()
 {
     using namespace BQ2562X_DEFS;
@@ -136,329 +139,35 @@ BQ2562x::WatchDogTimerConf BQ2562x::getWatchDog()
     return static_cast<WatchDogTimerConf>(reg_bits.read());
 }
 
-bool BQ2562x::getTS(bool &enabled)
+void BQ2562x::resetRegister()
 {
-    bool tsIgnore = false, tsDis = false;
-    if (readReg(NTC_Control_0_TS_IGNORE, tsIgnore))
-    {
-        Register reg = ADC_Function_Disable_0;
-        reg.start = reg.end = static_cast<uint8_t>(Adc::TS);
-        if (readReg(reg, tsDis))
-        {
-            enabled = (!tsIgnore) && (!tsDis);
-            return true;
-        }
-    }
-    return false;
+    auto reg_bits = I2C_RegisterBits(&_regChargerControl, 1, 23);
+    reg_bits.write(1);
 }
 
-bool BQ2562x::enableHIZ(bool enable)
+uint8_t BQ2562x::getPartNumber()
 {
-    return writeReg(Charger_Control_0_EN_HIZ, enable);
+    auto reg_bits = I2C_RegisterBits(&_regPartInformation, 3, 3);
+    return reg_bits.read();
 }
 
-bool BQ2562x::enableTS(bool enable)
+uint8_t BQ2562x::getDeviceRevision()
 {
-    return writeReg(NTC_Control_0_TS_IGNORE, !enable) && enableADC(Adc::TS, enable);
+    auto reg_bits = I2C_RegisterBits(&_regPartInformation, 3, 0);
+    return reg_bits.read();
 }
 
-bool BQ2562x::enableADC(Adc adc, bool enable)
-{
-    Register reg = ADC_Function_Disable_0;
-    reg.start = reg.end = static_cast<uint8_t>(adc);
-    return writeReg(reg, !enable);
-}
-
-bool BQ2562x::getPartInformation(uint8_t &value)
-{
-    return readReg(Part_Information, value);
-}
-
-bool BQ2562x::enableInterrupts(bool enable)
-{
-    uint8_t data = enable ? 0x00 : 0xFF;
-    if (writeReg(Charger_Mask_0, data))
-    {
-        return writeReg(Charger_Mask_1, data);
-    }
-    return false;
-}
-
-bool BQ2562x::enableInterrupt(Interrupt num, bool en)
-{
-    uint8_t reg0 = 0;
-    uint8_t reg1 = 0;
-
-    if (readReg(Charger_Mask_0, reg0))
-    {
-        uint8_t mask0 = 0, mask1 = 0;
-
-        if (readReg(Charger_Mask_1, reg1))
-        {
-            switch (num)
-            {
-            case Interrupt::VBUS:
-                mask1 = 0b1 << 0;
-                break;
-            default:
-                break;
-            }
-
-            reg0 = en ? reg0 & ~(mask0) : reg0 | mask0;
-            reg1 = en ? reg1 & ~(mask1) : reg1 | mask1;
-
-            if (writeReg(Charger_Mask_0, reg0))
-            {
-                return writeReg(Charger_Mask_1, reg1);
-            }
-        }
-    }
-
-    return false;
-}
-
-bool BQ2562x::enableCharging(bool state)
-{
-    return writeReg(Charger_Control_0_EN_CHG, state);
-}
-
-bool BQ2562x::getVBUS(uint16_t &value)
-{
-    uint16_t data = 0;
-    if (readReg(VBUS_ADC, data))
-    {
-        value = data * 3.97f;
-        return true;
-    }
-
-    return false;
-}
-
-bool BQ2562x::getIBAT(int16_t &value)
-{
-    uint16_t data = 0;
-    if (readReg(IBAT_ADC, data))
-    {
-        if (data != 0x2000)
-        {
-            if (data >= 0x38AD && data <= 0x3FFF)
-            {
-                data = ((0x3FFF - data + 1) * 4) * -1;
-            }
-            else
-            {
-                data *= 4;
-            }
-
-            value = data;
-            return true;
-        }
-    }
-    return false;
-}
-
-bool BQ2562x::getIBUS(int16_t &value)
-{
-    uint16_t data = 0;
-    if (readReg(IBUS_ADC, data))
-    {
-        if (data >= 0x7830 && data <= 0x7FFF)
-        {
-            data = (0x7FFF - data + 1) * -2;
-        }
-        else
-        {
-            data *= 2;
-        }
-
-        value = data;
-        return true;
-    }
-    return false;
-}
-
-bool BQ2562x::getVBAT(uint16_t &value)
-{
-    uint16_t res = 0;
-    if (readReg(VBAT_ADC, res))
-    {
-        value = (res * 1.99f);
-        return true;
-    }
-    return false;
-}
-
-bool BQ2562x::setVINDPM(uint32_t mV)
-{
-    return writeReg(Input_Current_Limit_VINDPM, static_cast<uint16_t>((mV) / 40));
-}
-
-bool BQ2562x::setIINDPM(uint32_t mA)
-{
-    return writeReg(Input_Current_Limit_IINDPM, static_cast<uint16_t>((mA) / 40));
-}
-
-bool BQ2562x::setupADC(bool enable, ADCRate rate, ADCSampling sampling, ADCAverage average, ADCAverageInit averageInit)
-{
-    uint8_t value = enable << 7;
-
-    if (enable)
-    {
-        value |= (rate == ADCRate::Oneshot) << 6;
-
-        switch (sampling)
-        {
-        case ADCSampling::Bits_12:
-            value |= 0 << 4;
-            break;
-
-        case ADCSampling::Bits_11:
-            value |= 1 << 4;
-            break;
-
-        case ADCSampling::Bits_10:
-            value |= 2 << 4;
-            break;
-
-        case ADCSampling::Bits_9:
-            value |= 3 << 4;
-            break;
-
-        default:
-            break;
-        }
-
-        value |= (average == ADCAverage::Running) << 3;
-        value |= (averageInit == ADCAverageInit::New) << 2;
-    }
-
-    return writeReg(ADC_Control, value);
-}
-
-bool BQ2562x::getADCDone(bool &done)
-{
-    uint8_t data;
-    if (readReg(Charger_Status_0, data))
-    {
-        done = data & (1 << 6);
-        return true;
-    }
-    return false;
-}
-
-bool BQ2562x::getBatteryVoltage(float &value)
-{
-    uint16_t data = 0;
-    if (readReg(VBAT_ADC, data))
-    {
-        value = data / 1000.0f;
-        return true;
-    }
-    return false;
-}
-
-bool BQ2562x::getVBUSStat(VBUSStat &stat)
-{
-    uint8_t data = 0;
-    if (readReg(Charger_Status_1_VBUS_STAT, data))
-    {
-        if (data == 0b100)
-        {
-            stat = VBUSStat::Adapter;
-        }
-        else
-        {
-            stat = VBUSStat::None;
-        }
-        return true;
-    }
-    return false;
-}
-
-bool BQ2562x::getChargeStat(ChargeStat &stat)
-{
-    uint8_t value = 0;
-    if (readReg(Charger_Status_1_CHG_STAT, value))
-    {
-        ChargeStat res = ChargeStat::Terminated;
-
-        switch (value)
-        {
-        case 0x01:
-            res = ChargeStat::Trickle;
-            break;
-
-        case 0x02:
-            res = ChargeStat::Taper;
-            break;
-
-        case 0x03:
-            res = ChargeStat::TopOff;
-            break;
-
-        case 0x00:
-        default:
-
-            break;
-        }
-
-        stat = res;
-        return true;
-    }
-
-    return false;
-}
-
-bool BQ2562x::setBATFETControl(BATFETControl control)
-{
-    uint8_t value = 0x0;
-    switch (control)
-    {
-    case BATFETControl::ShutdownMode:
-        value = 0x01;
-        break;
-    case BATFETControl::ShipMode:
-        value = 0x02;
-        break;
-    case BATFETControl::SystemPowerReset:
-        value = 0x03;
-        break;
-    case BATFETControl::Normal:
-    default:
-        break;
-    }
-
-    return writeReg(Charger_Control_2_BATFET_CTRL, value);
-}
-
-bool BQ2562x::setBATFETDelay(BATFETDelay delay)
-{
-    bool value = false;
-    switch (delay)
-    {
-    case BATFETDelay::Delay10s:
-        value = true;
-        break;
-    case BATFETDelay::Delay20ms:
-    default:
-        break;
-    }
-
-    return writeReg(Charger_Control_2_BATFET_DLY, value);
-}
-
-bool BQ2562x::enableWVBUS(bool enable)
-{
-    return writeReg(Charger_Control_2_WVBUS, enable);
-}
-
-bool BQ2562x::getTS_ADC(float &value)
-{
-    uint16_t res = 0;
-    if (readReg(TS_ADC, res))
-    {
-        value = (res * 0.0961f) / 100.0f;
-        return true;
-    }
-    return false;
-}
+// const char *partNumberToString(uint8_t part_number)
+// {
+//     switch (part_number)
+//     {
+//     case 0x02:
+//         return "BQ25628";
+//     case 0x04:
+//         return "BQ25628E";
+//     case 0x06:
+//         return "BQ25629";
+//     default:
+//         throw std::runtime_error("Invalid part number");
+//     }
+// }

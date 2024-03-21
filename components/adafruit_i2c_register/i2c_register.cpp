@@ -6,39 +6,35 @@
 
 #include <i2c_register.h>
 #include <string.h>
+#include <iostream>
 
-/*!
- *    @brief  Create a register we access over an I2C Device (which defines the
- * bus and address)
- *    @param  i2cdevice The I2CDevice to use for underlying I2C access
- *    @param  reg_addr The address pointer value for the I2C/SMBus register, can
- * be 8 or 16 bits
- *    @param  width    The width of the register data itself, defaults to 1 byte
- *    @param  byteorder The byte order of the register (used when width is > 1),
- * defaults to LSBFIRST
- *    @param  address_width The width of the register address itself, defaults
- * to 1 byte
- */
-I2C_Register::I2C_Register(i2c_master_dev_handle_t i2cdevice,
-                           uint16_t reg_addr,
-                           uint8_t width,
-                           I2C_Register_ByteOrder byteorder)
+using std::runtime_error;
+
+I2C_Register::I2C_Register()
 {
+    _i2cdevice = NULL;
+};
+
+I2C_Register::I2C_Register(i2c_master_dev_handle_t i2cdevice, uint8_t reg_addr, uint8_t width, I2C_Register_ByteOrder byteorder)
+{
+    if (width > 4)
+        throw runtime_error("Width must be less than 4 bytes");
+
     _i2cdevice = i2cdevice;
-    _addrwidth = 2;
-    _address = reg_addr;
+    _addrwidth = 1;
+    _address[0] = reg_addr;
     _byteorder = byteorder;
     _width = width;
 }
 
-I2C_Register::I2C_Register(i2c_master_dev_handle_t i2cdevice,
-                           uint8_t reg_addr,
-                           uint8_t width,
-                           I2C_Register_ByteOrder byteorder)
+I2C_Register::I2C_Register(i2c_master_dev_handle_t i2cdevice, uint8_t *address, uint8_t addrwidth, uint8_t width, I2C_Register_ByteOrder byteorder)
 {
+    if (width > 4 || addrwidth > 4)
+        throw runtime_error("Width and address width must be less than 4 bytes");
+
     _i2cdevice = i2cdevice;
-    _addrwidth = 1;
-    _address = reg_addr;
+    _addrwidth = addrwidth;
+    memcpy(_address, address, addrwidth);
     _byteorder = byteorder;
     _width = width;
 }
@@ -53,17 +49,12 @@ I2C_Register::I2C_Register(i2c_master_dev_handle_t i2cdevice,
 esp_err_t I2C_Register::write(uint8_t *buffer, uint8_t len)
 {
 
-    uint8_t addrbuffer[2] = {(uint8_t)(_address & 0xFF),
-                             (uint8_t)(_address >> 8)};
-
     uint8_t write_size = len + _addrwidth;
     uint8_t write_buffer[write_size];
-    memcpy(write_buffer, addrbuffer, _addrwidth);
+    memcpy(write_buffer, _address, _addrwidth);
     memcpy(write_buffer + _addrwidth, buffer, len);
 
     return i2c_master_transmit(_i2cdevice, write_buffer, write_size, _timeout);
-
-    return false;
 }
 
 /*!
@@ -76,13 +67,10 @@ esp_err_t I2C_Register::write(uint8_t *buffer, uint8_t len)
 esp_err_t I2C_Register::write(uint32_t value, uint8_t numbytes)
 {
     if (numbytes == 0)
-    {
         numbytes = _width;
-    }
+
     if (numbytes > 4)
-    {
-        return false;
-    }
+        return ESP_ERR_INVALID_SIZE;
 
     // store a copy
     _cached = value;
@@ -147,10 +135,7 @@ uint32_t I2C_Register::readCached(void) { return _cached; }
  */
 esp_err_t I2C_Register::read(uint8_t *buffer, uint8_t len)
 {
-    uint8_t addrbuffer[2] = {(uint8_t)(_address & 0xFF),
-                             (uint8_t)(_address >> 8)};
-
-    return i2c_master_transmit_receive(_i2cdevice, addrbuffer, _addrwidth, buffer, len, _timeout);
+    return i2c_master_transmit_receive(_i2cdevice, _address, _addrwidth, buffer, len, _timeout);
 }
 
 /*!
@@ -262,17 +247,10 @@ void I2C_Register::setWidth(uint8_t width) { _width = width; }
 /*!
  *    @brief  Set register address
  *    @param address the address from register
+ *    @param addrwidth the width of address
  */
-void I2C_Register::setAddress(uint16_t address)
+void I2C_Register::setAddress(uint8_t *address, uint8_t addrwidth)
 {
-    _address = address;
-}
-
-/*!
- *    @brief  Set the width of register address
- *    @param address_width the width for register address
- */
-void I2C_Register::setAddressWidth(uint16_t address_width)
-{
-    _addrwidth = address_width;
+    _addrwidth = addrwidth;
+    memcpy(_address, address, addrwidth);
 }

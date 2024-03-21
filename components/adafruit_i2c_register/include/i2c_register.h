@@ -16,10 +16,11 @@ enum I2C_Register_ByteOrder
 class I2C_Register
 {
 public:
-    I2C_Register(i2c_master_dev_handle_t i2cdevice, uint16_t reg_addr,
-                 uint8_t width = 1, I2C_Register_ByteOrder byteorder = LSBFIRST);
+    I2C_Register(); // default constructor, DO NOT USE
     I2C_Register(i2c_master_dev_handle_t i2cdevice, uint8_t reg_addr,
                  uint8_t width = 1, I2C_Register_ByteOrder byteorder = LSBFIRST);
+    I2C_Register(i2c_master_dev_handle_t i2cdevice, uint8_t *address, uint8_t addrwidth,
+                 uint8_t width, I2C_Register_ByteOrder byteorder = LSBFIRST);
 
     esp_err_t read(uint8_t *buffer, uint8_t len);
     esp_err_t read(uint8_t *value);
@@ -32,15 +33,15 @@ public:
     uint8_t width(void);
 
     void setWidth(uint8_t width);
-    void setAddress(uint16_t address);
+    void setAddress(uint8_t *address, uint8_t addrwidth);
     void setAddressWidth(uint16_t address_width);
 
 private:
     i2c_master_dev_handle_t _i2cdevice;
-    uint16_t _address;
+    uint8_t _address[4];
     uint8_t _width, _addrwidth, _byteorder;
-    uint8_t _buffer[4]; // we won't support anything larger than uint32 for
-                        // non-buffered read
+    uint8_t _buffer[4];
+
     uint32_t _cached = 0;
     uint16_t _timeout = 500; // 500ms i2c timeout
 };

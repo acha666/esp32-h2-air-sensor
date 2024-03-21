@@ -12,6 +12,8 @@ extern "C"
 
     void BQScanTask();
 
+    void ChargerTestTask();
+
 #ifdef __cplusplus
 }
 #endif

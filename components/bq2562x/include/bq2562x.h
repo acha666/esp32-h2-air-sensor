@@ -4,7 +4,6 @@
 #include "driver/i2c_master.h"
 #include "i2c_register.h"
 #include "esp_log.h"
-#include <memory>
 
 class BQ2562x
 {
@@ -103,35 +102,12 @@ public:
     void setWatchDog(WatchDogTimerConf timer);
     WatchDogTimerConf getWatchDog();
 
-    bool getTS_ADC(float &value);
-    bool enableCharging(bool state);
-    bool enableSTAT(bool enable);
-    bool enableTS(bool enable);
-    bool enableWD(bool enable);
-    bool enableHIZ(bool enable);
-    bool setBATFETControl(BATFETControl control);
-    bool setBATFETDelay(BATFETDelay delay);
-    bool enableInterrupts(bool enable);
-    bool enableInterrupt(Interrupt mask, bool en);
-    bool enableWVBUS(bool enable);
-    bool getVBAT(uint16_t &value);
-    bool enableADC(Adc adc, bool enable);
-    bool setupADC(bool enable, ADCRate rate = ADCRate::Continuous, ADCSampling sampling = ADCSampling::Bits_9,
-                  ADCAverage average = ADCAverage::Single, ADCAverageInit averageInit = ADCAverageInit::Existing);
-    bool getADCDone(bool &done);
+    void resetRegister();
 
-    bool getVBUSStat(VBUSStat &stat);
-    bool getPartInformation(uint8_t &value);
-    bool getBatteryVoltage(float &voltage);
-    bool getChargeStat(ChargeStat &stat);
-    bool getIBUS(int16_t &value);
-    bool getWD(bool &enabled);
-    bool getTS(bool &enabled);
+    uint8_t getPartNumber();
+    uint8_t getDeviceRevision();
 
-    bool getVBUS(uint16_t &value);
-    bool getIBAT(int16_t &value);
-    bool setVINDPM(uint32_t mV);
-    bool setIINDPM(uint32_t mA);
+    // const char *partNumberToString(uint8_t part_number);
 
 private:
     void _initRegisters();
