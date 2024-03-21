@@ -51,7 +51,6 @@ BQ2562x::BQ2562x(i2c_master_bus_handle_t bus_handle, uint8_t address)
 
     ret = i2c_master_probe(_i2cBus, address, 500); // check if the device is connected
     if (ret != ESP_OK)
-
         throw runtime_error("BQ2562x not found");
 
     i2c_device_config_t dev_cfg = {
@@ -71,39 +70,40 @@ BQ2562x::BQ2562x(i2c_master_bus_handle_t bus_handle, uint8_t address)
 
 BQ2562x::~BQ2562x()
 {
-    i2c_master_bus_rm_device(_i2cDevice);
+    if (i2c_master_bus_rm_device(_i2cDevice) != ESP_OK)
+        throw runtime_error("Failed to remove BQ2562x from I2C bus");
 }
 void BQ2562x::_initRegisters()
 {
     using namespace BQ2562X_DEFS;
-    _regChargeCurrentLimit = std::make_unique<I2C_Register>(_i2cDevice, REG_CHARGE_CURRENT_LIMIT_ADDR, 2);
-    _regChargeVoltageLimit = std::make_unique<I2C_Register>(_i2cDevice, REG_CHARGE_VOLTAGE_LIMIT_ADDR, 2);
-    _regInputCurrentLimit = std::make_unique<I2C_Register>(_i2cDevice, REG_INPUT_CURRENT_LIMIT_ADDR, 2);
-    _regInputVoltageLimit = std::make_unique<I2C_Register>(_i2cDevice, REG_INPUT_VOLTAGE_LIMIT_ADDR, 2);
-    _regMinimalSystemVoltage = std::make_unique<I2C_Register>(_i2cDevice, REG_MINIMAL_SYSTEM_VOLTAGE_ADDR, 2);
-    _regPreChargeControl = std::make_unique<I2C_Register>(_i2cDevice, REG_PRE_CHARGE_CONTROL_ADDR, 2);
-    _regTerminationControl = std::make_unique<I2C_Register>(_i2cDevice, REG_TERMINATION_CONTROL_ADDR, 2);
-    _regChargeControl = std::make_unique<I2C_Register>(_i2cDevice, REG_CHARGE_CONTROL_ADDR, 1);
-    _regChargeTimerControl = std::make_unique<I2C_Register>(_i2cDevice, REG_CHARGE_TIMER_CONTROL_ADDR, 1);
-    _regChargerControl = std::make_unique<I2C_Register>(_i2cDevice, REG_CHARGER_CONTROL_0_ADDR, 4);
-    _regNTCControl = std::make_unique<I2C_Register>(_i2cDevice, REG_NTC_CONTROL_0_ADDR, 3);
-    _regChargerStatus = std::make_unique<I2C_Register>(_i2cDevice, REG_CHARGER_STATUS_0_ADDR, 2);
-    _regFaultStatus0 = std::make_unique<I2C_Register>(_i2cDevice, REG_FAULT_STATUS_0_ADDR, 1);
-    _regChargerFlag = std::make_unique<I2C_Register>(_i2cDevice, REG_CHARGER_FLAG_0_ADDR, 2);
-    _regFaultFlag0 = std::make_unique<I2C_Register>(_i2cDevice, REG_FAULT_FLAG_0_ADDR, 1);
-    _regChargerMask = std::make_unique<I2C_Register>(_i2cDevice, REG_CHARGER_MASK_0_ADDR, 2);
-    _regFaultMask0 = std::make_unique<I2C_Register>(_i2cDevice, REG_FAULT_MASK_0_ADDR, 1);
-    _regADCControl = std::make_unique<I2C_Register>(_i2cDevice, REG_ADC_CONTROL_ADDR, 1);
-    _regADCFunctionDisable0 = std::make_unique<I2C_Register>(_i2cDevice, REG_ADC_FUNCTION_DISABLE_0_ADDR, 1);
-    _regIBUS_ADC = std::make_unique<I2C_Register>(_i2cDevice, REG_IBUS_ADC_ADDR, 2);
-    _regIBAT_ADC = std::make_unique<I2C_Register>(_i2cDevice, REG_IBAT_ADC_ADDR, 2);
-    _regVBUS_ADC = std::make_unique<I2C_Register>(_i2cDevice, REG_VBUS_ADC_ADDR, 2);
-    _regVPMI_DADC = std::make_unique<I2C_Register>(_i2cDevice, REG_VPMID_ADC_ADDR, 2);
-    _regVBAT_ADC = std::make_unique<I2C_Register>(_i2cDevice, REG_VBAT_ADC_ADDR, 2);
-    _regVSYS_ADC = std::make_unique<I2C_Register>(_i2cDevice, REG_VSYS_ADC_ADDR, 2);
-    _regTS_ADC = std::make_unique<I2C_Register>(_i2cDevice, REG_TS_ADC_ADDR, 2);
-    _regTDIE_ADC = std::make_unique<I2C_Register>(_i2cDevice, REG_TDIE_ADC_ADDR, 2);
-    _regPartInformation = std::make_unique<I2C_Register>(_i2cDevice, REG_PART_INFORMATION_ADDR, 1);
+    _regChargeCurrentLimit = I2C_Register(_i2cDevice, REG_CHARGE_CURRENT_LIMIT_ADDR, 2);
+    _regChargeVoltageLimit = I2C_Register(_i2cDevice, REG_CHARGE_VOLTAGE_LIMIT_ADDR, 2);
+    _regInputCurrentLimit = I2C_Register(_i2cDevice, REG_INPUT_CURRENT_LIMIT_ADDR, 2);
+    _regInputVoltageLimit = I2C_Register(_i2cDevice, REG_INPUT_VOLTAGE_LIMIT_ADDR, 2);
+    _regMinimalSystemVoltage = I2C_Register(_i2cDevice, REG_MINIMAL_SYSTEM_VOLTAGE_ADDR, 2);
+    _regPreChargeControl = I2C_Register(_i2cDevice, REG_PRE_CHARGE_CONTROL_ADDR, 2);
+    _regTerminationControl = I2C_Register(_i2cDevice, REG_TERMINATION_CONTROL_ADDR, 2);
+    _regChargeControl = I2C_Register(_i2cDevice, REG_CHARGE_CONTROL_ADDR, 1);
+    _regChargeTimerControl = I2C_Register(_i2cDevice, REG_CHARGE_TIMER_CONTROL_ADDR, 1);
+    _regChargerControl = I2C_Register(_i2cDevice, REG_CHARGER_CONTROL_0_ADDR, 4);
+    _regNTCControl = I2C_Register(_i2cDevice, REG_NTC_CONTROL_0_ADDR, 3);
+    _regChargerStatus = I2C_Register(_i2cDevice, REG_CHARGER_STATUS_0_ADDR, 2);
+    _regFaultStatus0 = I2C_Register(_i2cDevice, REG_FAULT_STATUS_0_ADDR, 1);
+    _regChargerFlag = I2C_Register(_i2cDevice, REG_CHARGER_FLAG_0_ADDR, 2);
+    _regFaultFlag0 = I2C_Register(_i2cDevice, REG_FAULT_FLAG_0_ADDR, 1);
+    _regChargerMask = I2C_Register(_i2cDevice, REG_CHARGER_MASK_0_ADDR, 2);
+    _regFaultMask0 = I2C_Register(_i2cDevice, REG_FAULT_MASK_0_ADDR, 1);
+    _regADCControl = I2C_Register(_i2cDevice, REG_ADC_CONTROL_ADDR, 1);
+    _regADCFunctionDisable0 = I2C_Register(_i2cDevice, REG_ADC_FUNCTION_DISABLE_0_ADDR, 1);
+    _regIBUS_ADC = I2C_Register(_i2cDevice, REG_IBUS_ADC_ADDR, 2);
+    _regIBAT_ADC = I2C_Register(_i2cDevice, REG_IBAT_ADC_ADDR, 2);
+    _regVBUS_ADC = I2C_Register(_i2cDevice, REG_VBUS_ADC_ADDR, 2);
+    _regVPMI_DADC = I2C_Register(_i2cDevice, REG_VPMID_ADC_ADDR, 2);
+    _regVBAT_ADC = I2C_Register(_i2cDevice, REG_VBAT_ADC_ADDR, 2);
+    _regVSYS_ADC = I2C_Register(_i2cDevice, REG_VSYS_ADC_ADDR, 2);
+    _regTS_ADC = I2C_Register(_i2cDevice, REG_TS_ADC_ADDR, 2);
+    _regTDIE_ADC = I2C_Register(_i2cDevice, REG_TDIE_ADC_ADDR, 2);
+    _regPartInformation = I2C_Register(_i2cDevice, REG_PART_INFORMATION_ADDR, 1);
 }
 
 /**
@@ -117,7 +117,7 @@ void BQ2562x::setChargeCurrent(uint16_t current)
     current /= 40;
     if (current >= 0x1 && current <= 0x32)
     {
-        auto reg_bits = I2C_RegisterBits(_regChargeCurrentLimit, 6, 4);
+        auto reg_bits = I2C_RegisterBits(&_regChargeCurrentLimit, 6, 4);
         reg_bits.write(current);
     }
     else
@@ -126,13 +126,13 @@ void BQ2562x::setChargeCurrent(uint16_t current)
 
 void BQ2562x::setWatchDog(WatchDogTimerConf timer)
 {
-    auto reg_bits = I2C_RegisterBits(*_regChargerControl, 2, 24);
+    auto reg_bits = I2C_RegisterBits(&_regChargerControl, 2, 24);
     reg_bits.write(static_cast<uint8_t>(timer));
 }
 
 BQ2562x::WatchDogTimerConf BQ2562x::getWatchDog()
 {
-    auto reg_bits = I2C_RegisterBits(_regChargerControl, 2, 24);
+    auto reg_bits = I2C_RegisterBits(&_regChargerControl, 2, 24);
     return static_cast<WatchDogTimerConf>(reg_bits.read());
 }
 

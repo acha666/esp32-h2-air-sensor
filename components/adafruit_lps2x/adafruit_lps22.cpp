@@ -12,6 +12,16 @@ Adafruit_LPS22::~Adafruit_LPS22(void)
     delete temp_sensor;
   if (pressure_sensor)
     delete pressure_sensor;
+
+  if (ctrl1_reg)
+    delete ctrl1_reg;
+  if (ctrl2_reg)
+    delete ctrl2_reg;
+  if (ctrl3_reg)
+    delete ctrl3_reg;
+  if (threshp_reg)
+    delete threshp_reg;
+
 }
 
 /*!  @brief Initializer for post i2c/spi init
