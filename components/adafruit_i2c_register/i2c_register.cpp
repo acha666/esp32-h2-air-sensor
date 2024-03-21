@@ -22,11 +22,22 @@
 I2C_Register::I2C_Register(i2c_master_dev_handle_t i2cdevice,
                            uint16_t reg_addr,
                            uint8_t width,
-                           I2C_Register_ByteOrder byteorder,
-                           uint8_t address_width)
+                           I2C_Register_ByteOrder byteorder)
 {
     _i2cdevice = i2cdevice;
-    _addrwidth = address_width;
+    _addrwidth = 2;
+    _address = reg_addr;
+    _byteorder = byteorder;
+    _width = width;
+}
+
+I2C_Register::I2C_Register(i2c_master_dev_handle_t i2cdevice,
+                           uint8_t reg_addr,
+                           uint8_t width,
+                           I2C_Register_ByteOrder byteorder)
+{
+    _i2cdevice = i2cdevice;
+    _addrwidth = 1;
     _address = reg_addr;
     _byteorder = byteorder;
     _width = width;

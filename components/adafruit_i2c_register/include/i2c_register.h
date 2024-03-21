@@ -17,8 +17,9 @@ class I2C_Register
 {
 public:
     I2C_Register(i2c_master_dev_handle_t i2cdevice, uint16_t reg_addr,
-                 uint8_t width = 1, I2C_Register_ByteOrder byteorder = LSBFIRST,
-                 uint8_t address_width = 1);
+                 uint8_t width = 1, I2C_Register_ByteOrder byteorder = LSBFIRST);
+    I2C_Register(i2c_master_dev_handle_t i2cdevice, uint8_t reg_addr,
+                 uint8_t width = 1, I2C_Register_ByteOrder byteorder = LSBFIRST);
 
     esp_err_t read(uint8_t *buffer, uint8_t len);
     esp_err_t read(uint8_t *value);

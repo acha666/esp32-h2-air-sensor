@@ -40,7 +40,7 @@ static void power_i2c_init(void)
     return;
 }
 
-extern "C" void BQScanTask()
+extern "C" void BQScanTask()  
 {
     i2c_master_bus_handle_t tool_bus_handle;
     i2c_port_t i2c_port = I2C_NUM_0;

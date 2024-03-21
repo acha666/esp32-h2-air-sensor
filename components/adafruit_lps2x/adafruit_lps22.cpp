@@ -22,7 +22,7 @@ esp_err_t Adafruit_LPS22::_init(int32_t sensor_id)
 {
 
   I2C_Register chip_id = I2C_Register(
-      i2c_dev, LPS2X_WHOAMI, 1);
+      i2c_dev, (uint8_t)LPS2X_WHOAMI, 1);
 
   // make sure we're talking to the right chip
   uint8_t id;
@@ -41,13 +41,13 @@ esp_err_t Adafruit_LPS22::_init(int32_t sensor_id)
   temp_offset = 0;
 
   ctrl1_reg = new I2C_Register(
-      i2c_dev, LPS22_CTRL_REG1, 1);
+      i2c_dev, (uint8_t)LPS22_CTRL_REG1, 1);
   ctrl2_reg = new I2C_Register(
-      i2c_dev, LPS22_CTRL_REG2, 1);
+      i2c_dev, (uint8_t)LPS22_CTRL_REG2, 1);
   ctrl3_reg = new I2C_Register(
-      i2c_dev, LPS22_CTRL_REG3, 1);
+      i2c_dev, (uint8_t)LPS22_CTRL_REG3, 1);
   threshp_reg = new I2C_Register(
-      i2c_dev, LPS22_THS_P_L_REG, 1);
+      i2c_dev, (uint8_t)LPS22_THS_P_L_REG, 1);
 
   reset();
   // do any software reset or other initial setup
