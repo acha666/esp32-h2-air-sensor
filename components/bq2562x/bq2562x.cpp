@@ -88,13 +88,13 @@ void BQ2562x::_initRegisters()
     _regTerminationControl = I2C_Register(_i2cDevice, REG_TERMINATION_CONTROL_ADDR, 2);
     _regChargeControl = I2C_Register(_i2cDevice, REG_CHARGE_CONTROL_ADDR, 1);
     _regChargeTimerControl = I2C_Register(_i2cDevice, REG_CHARGE_TIMER_CONTROL_ADDR, 1);
-    _regChargerControl = I2C_Register(_i2cDevice, REG_CHARGER_CONTROL_0_ADDR, 4);
-    _regNTCControl = I2C_Register(_i2cDevice, REG_NTC_CONTROL_0_ADDR, 3);
-    _regChargerStatus = I2C_Register(_i2cDevice, REG_CHARGER_STATUS_0_ADDR, 2);
+    _regChargerControl = I2C_Register(_i2cDevice, REG_CHARGER_CONTROL_0_ADDR, 4, MSBFIRST);
+    _regNTCControl = I2C_Register(_i2cDevice, REG_NTC_CONTROL_0_ADDR, 3, MSBFIRST);
+    _regChargerStatus = I2C_Register(_i2cDevice, REG_CHARGER_STATUS_0_ADDR, 2, MSBFIRST);
     _regFaultStatus0 = I2C_Register(_i2cDevice, REG_FAULT_STATUS_0_ADDR, 1);
-    _regChargerFlag = I2C_Register(_i2cDevice, REG_CHARGER_FLAG_0_ADDR, 2);
+    _regChargerFlag = I2C_Register(_i2cDevice, REG_CHARGER_FLAG_0_ADDR, 2, MSBFIRST);
     _regFaultFlag0 = I2C_Register(_i2cDevice, REG_FAULT_FLAG_0_ADDR, 1);
-    _regChargerMask = I2C_Register(_i2cDevice, REG_CHARGER_MASK_0_ADDR, 2);
+    _regChargerMask = I2C_Register(_i2cDevice, REG_CHARGER_MASK_0_ADDR, 2, MSBFIRST);
     _regFaultMask0 = I2C_Register(_i2cDevice, REG_FAULT_MASK_0_ADDR, 1);
     _regADCControl = I2C_Register(_i2cDevice, REG_ADC_CONTROL_ADDR, 1);
     _regADCFunctionDisable0 = I2C_Register(_i2cDevice, REG_ADC_FUNCTION_DISABLE_0_ADDR, 1);
@@ -110,21 +110,200 @@ void BQ2562x::_initRegisters()
 }
 
 /**
- * @brief
+ * @brief aka ICHG, POR=320mA
+ * @note When Q4_FULLON=1, this register has a minimum value of 80mA
  *
- * @param current in mA, 40mA oer step
- * @return esp_err_t
+ * @param current in mA, 40-2000mA, 40mA per step
  */
 void BQ2562x::setChargeCurrent(uint16_t current)
 {
     current /= 40;
     if (current >= 0x1 && current <= 0x32)
     {
-        auto reg_bits = I2C_RegisterBits(&_regChargeCurrentLimit, 6, 4);
+        auto reg_bits = I2C_RegisterBits(&_regChargeCurrentLimit, 6, 5);
         reg_bits.write(current);
     }
     else
         throw std::runtime_error("Invalid charge current");
+}
+
+uint16_t BQ2562x::getChargeCurrent()
+{
+    // ESP_LOGD(TAG, "raw: 0x%04lx", _regChargeCurrentLimit.read());
+    auto reg_bits = I2C_RegisterBits(&_regChargeCurrentLimit, 6, 5);
+    return reg_bits.read() * 40;
+}
+
+/**
+ * @brief aka VREG, POR=4200mV
+ *
+ * @param voltage in mV, 3500-4800mV, 10mV per step
+ */
+void BQ2562x::setChargeVoltage(uint16_t voltage)
+{
+    voltage /= 10;
+    if (voltage >= 0x15e && voltage <= 0x1e0)
+    {
+        auto reg_bits = I2C_RegisterBits(&_regChargeVoltageLimit, 9, 3);
+        reg_bits.write(voltage);
+    }
+    else
+        throw std::runtime_error("Invalid charge voltage");
+}
+
+uint16_t BQ2562x::getChargeVoltage()
+{
+    auto reg_bits = I2C_RegisterBits(&_regChargeVoltageLimit, 9, 3);
+    return reg_bits.read() * 10;
+}
+
+/**
+ * @brief aka IINDPM, POR=3200mA
+ * @note When the adapter is removed, IINDPM is reset to its POR value of 3.2 A.
+ *
+ * @param current in mA, 100-3200mA, 20mA per step
+ */
+void BQ2562x::setInputCurrent(uint16_t current)
+{
+    current /= 20;
+    if (current >= 0x5 && current <= 0xA0)
+    {
+        auto reg_bits = I2C_RegisterBits(&_regInputCurrentLimit, 8, 4);
+        reg_bits.write(current);
+    }
+    else
+        throw std::runtime_error("Invalid input current");
+}
+
+uint16_t BQ2562x::getInputCurrent()
+{
+    auto reg_bits = I2C_RegisterBits(&_regInputCurrentLimit, 8, 4);
+    return reg_bits.read() * 20;
+}
+
+/**
+ * @brief aka VINDPM, POR=4600mV
+ *
+ * @param voltage in mV, 3800-16800mV, 40mV per step
+ */
+void BQ2562x::setInputVoltage(uint16_t voltage)
+{
+    voltage /= 40;
+    if (voltage >= 0x5f && voltage <= 0x1a4)
+    {
+        auto reg_bits = I2C_RegisterBits(&_regInputVoltageLimit, 9, 5);
+        reg_bits.write(voltage);
+    }
+    else
+        throw std::runtime_error("Invalid input voltage");
+}
+
+uint16_t BQ2562x::getInputVoltage()
+{
+    auto reg_bits = I2C_RegisterBits(&_regInputVoltageLimit, 9, 5);
+    return reg_bits.read() * 40;
+}
+
+/**
+ * @brief aka VSYSMIN, POR=3520mV
+ *
+ * @param voltage in mV, 2560-3840mV, 80mV per step
+ */
+void BQ2562x::setMinimalSystemVoltage(uint16_t voltage)
+{
+    voltage /= 80;
+    if (voltage >= 0x20 && voltage <= 0x30)
+    {
+        auto reg_bits = I2C_RegisterBits(&_regMinimalSystemVoltage, 6, 6);
+        reg_bits.write(voltage);
+    }
+    else
+        throw std::runtime_error("Invalid minimal system voltage");
+}
+
+uint16_t BQ2562x::getMinimalSystemVoltage()
+{
+    auto reg_bits = I2C_RegisterBits(&_regMinimalSystemVoltage, 6, 6);
+    return reg_bits.read() * 80;
+}
+
+/**
+ * @brief aka IPRECHG, POR=30mA
+ * @note When Q4_FULLON=1, this register has a minimum value of 80mA, so Reset value becomes 80mA in this case
+ *
+ * @param current in mA, 10-310mA, 10mA per step
+ */
+void BQ2562x::setPreChargeCurrent(uint8_t current)
+{
+    current /= 10;
+    if (current >= 0x1 && current <= 0x1F)
+    {
+        auto reg_bits = I2C_RegisterBits(&_regPreChargeControl, 5, 3);
+        reg_bits.write(current);
+    }
+    else
+        throw std::runtime_error("Invalid pre-charge current");
+}
+
+uint8_t BQ2562x::getPreChargeCurrent()
+{
+    auto reg_bits = I2C_RegisterBits(&_regPreChargeControl, 5, 3);
+    return reg_bits.read() * 10;
+}
+
+/**
+ * @brief aka ITERM, POR=20mA
+ * @note When Q4_FULLON=1, this register has a minimum value of 60mA, so Reset value becomes 60mA in this case
+ *
+ * @param current in mA, 5-310mA, 5mA per step
+ */
+void BQ2562x::setTerminationCurrent(uint8_t current)
+{
+    current /= 5;
+    if (current >= 0x1 && current <= 0x3E)
+    {
+        auto reg_bits = I2C_RegisterBits(&_regTerminationControl, 6, 2);
+        reg_bits.write(current);
+    }
+    else
+        throw std::runtime_error("Invalid termination current");
+}
+
+uint8_t BQ2562x::getTerminationCurrent()
+{
+    auto reg_bits = I2C_RegisterBits(&_regTerminationControl, 6, 2);
+    return reg_bits.read() * 5;
+}
+
+void BQ2562x::setChargeControl(BQ2562X_DEFS::CHARGE_CONTROL_REG control)
+{
+    uint8_t reg_value = _regChargeControl.read();
+    reg_value = control.to_byte(reg_value);
+    _regChargeControl.write(reg_value);
+}
+
+BQ2562X_DEFS::CHARGE_CONTROL_REG BQ2562x::getChargeControl()
+{
+    uint8_t reg_value = _regChargeControl.read();
+    return BQ2562X_DEFS::CHARGE_CONTROL_REG::from_byte(reg_value);
+}
+
+void BQ2562x::setChargeTimerControl(BQ2562X_DEFS::CHARGE_TIMER_CONTROL_REG control)
+{
+    uint8_t reg_value = _regChargeTimerControl.read();
+    reg_value = control.to_byte(reg_value);
+    _regChargeTimerControl.write(reg_value);
+}
+
+BQ2562X_DEFS::CHARGE_TIMER_CONTROL_REG BQ2562x::getChargeTimerControl()
+{
+    uint8_t reg_value = _regChargeTimerControl.read();
+    return BQ2562X_DEFS::CHARGE_TIMER_CONTROL_REG::from_byte(reg_value);
+}
+
+uint32_t BQ2562x::getChargerControl()
+{
+    return _regChargerControl.read();
 }
 
 void BQ2562x::setWatchDog(WatchDogTimerConf timer)

@@ -4,6 +4,7 @@
 #include "driver/i2c_master.h"
 #include "i2c_register.h"
 #include "esp_log.h"
+#include "bq2562x_defs.h"
 
 class BQ2562x
 {
@@ -99,8 +100,38 @@ public:
     ~BQ2562x();
 
     void setChargeCurrent(uint16_t current);
+    uint16_t getChargeCurrent();
+
+    void setChargeVoltage(uint16_t voltage);
+    uint16_t getChargeVoltage();
+
+    void setInputCurrent(uint16_t current);
+    uint16_t getInputCurrent();
+
+    void setInputVoltage(uint16_t voltage);
+    uint16_t getInputVoltage();
+
+    void setMinimalSystemVoltage(uint16_t voltage);
+    uint16_t getMinimalSystemVoltage();
+
+    void setPreChargeCurrent(uint8_t current);
+    uint8_t getPreChargeCurrent();
+
+    void setTerminationCurrent(uint8_t current);
+    uint8_t getTerminationCurrent();
+
     void setWatchDog(WatchDogTimerConf timer);
     WatchDogTimerConf getWatchDog();
+
+    void setChargeControl(BQ2562X_DEFS::CHARGE_CONTROL_REG charge_control);
+    BQ2562X_DEFS::CHARGE_CONTROL_REG getChargeControl();
+
+    void setChargeTimerControl(BQ2562X_DEFS::CHARGE_TIMER_CONTROL_REG control);
+    BQ2562X_DEFS::CHARGE_TIMER_CONTROL_REG getChargeTimerControl();
+
+    // void setChargerControl(BQ2562X_DEFS::CHARGER_CONTROL_REG control);
+    // BQ2562X_DEFS::CHARGER_CONTROL_REG getChargerControl();
+    uint32_t getChargerControl();
 
     void resetRegister();
 

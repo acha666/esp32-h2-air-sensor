@@ -3,13 +3,14 @@
 #include "main.h"
 #include "bq27426.h"
 #include "bq2562x.h"
+#include "bq2562x_defs.h"
 
 static void power_i2c_init(void);
 
 static const char *TAG = "Power";
 static i2c_master_bus_handle_t power_i2c_master_bus_handle;
 
-BQ27426 * BatteryGauge;
+BQ27426 *BatteryGauge;
 BQ2562x *Charger;
 
 extern "C" void PowerTask(void *pvParameters)
@@ -18,6 +19,13 @@ extern "C" void PowerTask(void *pvParameters)
     assert(xSemaphoreTake(xI2CSemaphore, 5000 / portTICK_PERIOD_MS) == pdTRUE);
     Charger = new BQ2562x(power_i2c_master_bus_handle, 0x6a);
     BatteryGauge = new BQ27426(power_i2c_master_bus_handle);
+
+    uint32_t val = Charger->getChargeCurrent();
+    ESP_LOGI(TAG, "Charge Current: %ld mA", val);
+
+    val = Charger->getChargerControl();
+    ESP_LOGI(TAG, "Charger Control: 0x%08lx", val);
+
     xSemaphoreGive(xI2CSemaphore);
 
     vTaskDelete(NULL);
