@@ -1,18 +1,3 @@
-/******************************************************************************
-BQ27426.cpp
-BQ27426Arduino Library Main Source File
-
-Based on library written by
-Jim Lindblom @ SparkFun Electronics
-May 9, 2016
-https://github.com/sparkfun/SparkFun_BQ27426_Arduino_Library
-
-Development environment specifics:
-Arduino 1.6.7
-SparkFun Battery Babysitter v1.0
-Arduino Uno (any 'duino should do)
-******************************************************************************/
-
 #include "bq27426.h"
 #include "bq27426_defs.h"
 #include "driver/i2c_master.h"

@@ -44,7 +44,7 @@ namespace BQ2562X_DEFS
     constexpr uint8_t REG_TDIE_ADC_ADDR = 0x36;
     constexpr uint8_t REG_PART_INFORMATION_ADDR = 0x38;
 
-    typedef struct CHARGE_CONTROL_REG
+    struct CHARGE_CONTROL_REG
     {
 
         enum TOPOFF_TMR_TYPES : uint8_t
@@ -96,7 +96,7 @@ namespace BQ2562X_DEFS
         }
     };
 
-    typedef struct CHARGE_TIMER_CONTROL_REG
+    struct CHARGE_TIMER_CONTROL_REG
     {
 
         std::optional<bool> DIS_STAT;       // Disable the STAT pin output, 0h = Enable (default); 1h = Disable
@@ -132,7 +132,7 @@ namespace BQ2562X_DEFS
         }
     };
 
-    typedef struct CHARGER_CONTROL_REG
+    struct CHARGER_CONTROL_REG
     {
         enum WATCH_DOG_TIMER_TYPES : uint8_t
         {
@@ -210,48 +210,48 @@ namespace BQ2562X_DEFS
         uint32_t to_value(uint32_t original_value = 0) const
         {
             if (EN_AUTO_IBATDIS.has_value())
-                original_value = (original_value & ~(0b1 << 7 + 8 * 3)) | (EN_AUTO_IBATDIS.value() << 7);
+                original_value = (original_value & ~(0b1 << (7 + 8 * 3))) | (EN_AUTO_IBATDIS.value() << (7 + 8 * 3));
             if (FORCE_IBATDIS.has_value())
-                original_value = (original_value & ~(0b1 << 6 + 8 * 3)) | (FORCE_IBATDIS.value() << 6);
+                original_value = (original_value & ~(0b1 << (6 + 8 * 3))) | (FORCE_IBATDIS.value() << (6 + 8 * 3));
             if (EN_CHG.has_value())
-                original_value = (original_value & ~(0b1 << 5 + 8 * 3)) | (EN_CHG.value() << 5);
+                original_value = (original_value & ~(0b1 << (5 + 8 * 3))) | (EN_CHG.value() << (5 + 8 * 3));
             if (EN_HIZ.has_value())
-                original_value = (original_value & ~(0b1 << 4 + 8 * 3)) | (EN_HIZ.value() << 4);
+                original_value = (original_value & ~(0b1 << (4 + 8 * 3))) | (EN_HIZ.value() << (4 + 8 * 3));
             if (FORCE_PMID_DIS.has_value())
-                original_value = (original_value & ~(0b1 << 3 + 8 * 3)) | (FORCE_PMID_DIS.value() << 3);
+                original_value = (original_value & ~(0b1 << (3 + 8 * 3))) | (FORCE_PMID_DIS.value() << (3 + 8 * 3));
             if (WD_RST.has_value())
-                original_value = (original_value & ~(0b1 << 2 + 8 * 3)) | (WD_RST.value() << 2);
+                original_value = (original_value & ~(0b1 << (2 + 8 * 3))) | (WD_RST.value() << (2 + 8 * 3));
             if (WATCHDOG.has_value())
-                original_value = (original_value & ~(0b11 << 0 + 8 * 3)) | (WATCHDOG.value() << 0);
+                original_value = (original_value & ~(0b11 << (0 + 8 * 3))) | (WATCHDOG.value() << (0 + 8 * 3));
 
             if (REG_RST.has_value())
-                original_value = (original_value & ~(0b1 << 7 + 8 * 2)) | (REG_RST.value() << 7);
+                original_value = (original_value & ~(0b1 << (7 + 8 * 2))) | (REG_RST.value() << (7 + 8 * 2));
             if (TREG.has_value())
-                original_value = (original_value & ~(0b1 << 6 + 8 * 2)) | (TREG.value() << 6);
+                original_value = (original_value & ~(0b1 << (6 + 8 * 2))) | (TREG.value() << (6 + 8 * 2));
             if (SET_CONV_FREQ.has_value())
-                original_value = (original_value & ~(0b11 << 4 + 8 * 2)) | (SET_CONV_FREQ.value() << 4);
+                original_value = (original_value & ~(0b11 << (4 + 8 * 2))) | (SET_CONV_FREQ.value() << (4 + 8 * 2));
             if (SET_CONV_STRN.has_value())
-                original_value = (original_value & ~(0b11 << 2 + 8 * 2)) | (SET_CONV_STRN.value() << 2);
+                original_value = (original_value & ~(0b11 << (2 + 8 * 2))) | (SET_CONV_STRN.value() << (2 + 8 * 2));
             if (VBUS_OVP.has_value())
-                original_value = (original_value & ~(0b1 << 0 + 8 * 2)) | (VBUS_OVP.value() << 0);
+                original_value = (original_value & ~(0b1 << (0 + 8 * 2))) | (VBUS_OVP.value() << (0 + 8 * 2));
 
             if (PFM_FWD_DIS.has_value())
-                original_value = (original_value & ~(0b1 << 4 + 8 * 1)) | (PFM_FWD_DIS.value() << 4);
+                original_value = (original_value & ~(0b1 << (4 + 8 * 1))) | (PFM_FWD_DIS.value() << (4 + 8 * 1));
             if (BATFET_CTRL_WVBUS.has_value())
-                original_value = (original_value & ~(0b1 << 3 + 8 * 1)) | (BATFET_CTRL_WVBUS.value() << 3);
+                original_value = (original_value & ~(0b1 << (3 + 8 * 1))) | (BATFET_CTRL_WVBUS.value() << (3 + 8 * 1));
             if (BATFET_DLY.has_value())
-                original_value = (original_value & ~(0b1 << 2 + 8 * 1)) | (BATFET_DLY.value() << 2);
+                original_value = (original_value & ~(0b1 << (2 + 8 * 1))) | (BATFET_DLY.value() << (2 + 8 * 1));
             if (BATFET_CTRL.has_value())
-                original_value = (original_value & ~(0b11 << 0 + 8 * 1)) | (BATFET_CTRL.value() << 0);
+                original_value = (original_value & ~(0b11 << (0 + 8 * 1))) | (BATFET_CTRL.value() << (0 + 8 * 1));
 
             if (IBAT_PK.has_value())
-                original_value = (original_value & ~(0b11 << 6 + 8 * 0)) | (IBAT_PK.value() << 6);
+                original_value = (original_value & ~(0b11 << (6 + 8 * 0))) | (IBAT_PK.value() << (6 + 8 * 0));
             if (VBAT_UVLO.has_value())
-                original_value = (original_value & ~(0b1 << 5 + 8 * 0)) | (VBAT_UVLO.value() << 5);
+                original_value = (original_value & ~(0b1 << (5 + 8 * 0))) | (VBAT_UVLO.value() << (5 + 8 * 0));
             if (EN_EXTILIM.has_value())
-                original_value = (original_value & ~(0b1 << 2 + 8 * 0)) | (EN_EXTILIM.value() << 2);
+                original_value = (original_value & ~(0b1 << (2 + 8 * 0))) | (EN_EXTILIM.value() << (2 + 8 * 0));
             if (CHG_RATE.has_value())
-                original_value = (original_value & ~(0b11 << 0 + 8 * 0)) | (CHG_RATE.value() << 0);
+                original_value = (original_value & ~(0b11 << (0 + 8 * 0))) | (CHG_RATE.value() << (0 + 8 * 0));
 
             return original_value;
         }
@@ -259,34 +259,34 @@ namespace BQ2562X_DEFS
         static CHARGER_CONTROL_REG from_value(uint32_t value)
         {
             CHARGER_CONTROL_REG reg;
-            reg.EN_AUTO_IBATDIS = (value >> 7 + 8 * 3) & 0b1;
-            reg.FORCE_IBATDIS = (value >> 6 + 8 * 3) & 0b1;
-            reg.EN_CHG = (value >> 5 + 8 * 3) & 0b1;
-            reg.EN_HIZ = (value >> 4 + 8 * 3) & 0b1;
-            reg.FORCE_PMID_DIS = (value >> 3 + 8 * 3) & 0b1;
-            reg.WD_RST = (value >> 2 + 8 * 3) & 0b1;
-            reg.WATCHDOG = static_cast<WATCH_DOG_TIMER_TYPES>((value >> 0 + 8 * 3) & 0b11);
+            reg.EN_AUTO_IBATDIS = (value >> (7 + 8 * 3)) & 0b1;
+            reg.FORCE_IBATDIS = (value >> (6 + 8 * 3)) & 0b1;
+            reg.EN_CHG = (value >> (5 + 8 * 3)) & 0b1;
+            reg.EN_HIZ = (value >> (4 + 8 * 3)) & 0b1;
+            reg.FORCE_PMID_DIS = (value >> (3 + 8 * 3)) & 0b1;
+            reg.WD_RST = (value >> (2 + 8 * 3)) & 0b1;
+            reg.WATCHDOG = static_cast<WATCH_DOG_TIMER_TYPES>((value >> (0 + 8 * 3)) & 0b11);
 
-            reg.REG_RST = (value >> 7 + 8 * 2) & 0b1;
-            reg.TREG = (value >> 6 + 8 * 2) & 0b1;
-            reg.SET_CONV_FREQ = static_cast<ADC_CONV_FREQ_TYPES>((value >> 4 + 8 * 2) & 0b11);
-            reg.SET_CONV_STRN = static_cast<CONV_STRN_TYPES>((value >> 2 + 8 * 2) & 0b11);
-            reg.VBUS_OVP = (value >> 0 + 8 * 2) & 0b1;
+            reg.REG_RST = (value >> (7 + 8 * 2)) & 0b1;
+            reg.TREG = (value >> (6 + 8 * 2)) & 0b1;
+            reg.SET_CONV_FREQ = static_cast<ADC_CONV_FREQ_TYPES>((value >> (4 + 8 * 2)) & 0b11);
+            reg.SET_CONV_STRN = static_cast<CONV_STRN_TYPES>((value >> (2 + 8 * 2)) & 0b11);
+            reg.VBUS_OVP = (value >> (0 + 8 * 2)) & 0b1;
 
-            reg.PFM_FWD_DIS = (value >> 4 + 8 * 1) & 0b1;
-            reg.BATFET_CTRL_WVBUS = (value >> 3 + 8 * 1) & 0b1;
-            reg.BATFET_DLY = (value >> 2 + 8 * 1) & 0b1;
-            reg.BATFET_CTRL = static_cast<BATFET_CTRL_TYPES>((value >> 0 + 8 * 1) & 0b11);
+            reg.PFM_FWD_DIS = (value >> (4 + 8 * 1)) & 0b1;
+            reg.BATFET_CTRL_WVBUS = (value >> (3 + 8 * 1)) & 0b1;
+            reg.BATFET_DLY = (value >> (2 + 8 * 1)) & 0b1;
+            reg.BATFET_CTRL = static_cast<BATFET_CTRL_TYPES>((value >> (0 + 8 * 1)) & 0b11);
 
-            reg.IBAT_PK = static_cast<IBAT_PK_CTRL_TYPES>((value >> 6 + 8 * 0) & 0b11);
-            reg.VBAT_UVLO = (value >> 5 + 8 * 0) & 0b1;
-            reg.EN_EXTILIM = (value >> 2 + 8 * 0) & 0b1;
-            reg.CHG_RATE = static_cast<CHG_RATE_TYPES>((value >> 0 + 8 * 0) & 0b11);
+            reg.IBAT_PK = static_cast<IBAT_PK_CTRL_TYPES>((value >> (6 + 8 * 0)) & 0b11);
+            reg.VBAT_UVLO = (value >> (5 + 8 * 0)) & 0b1;
+            reg.EN_EXTILIM = (value >> (2 + 8 * 0)) & 0b1;
+            reg.CHG_RATE = static_cast<CHG_RATE_TYPES>((value >> (0 + 8 * 0)) & 0b11);
             return reg;
         };
     };
 
-    typedef struct TS_CONTROL_REG
+    struct NTC_CONTROL_REG
     {
         enum TS_ISET_TYPE : uint8_t
         {
@@ -323,52 +323,52 @@ namespace BQ2562X_DEFS
         uint32_t to_value(uint32_t original_value = 0) const
         {
             if (TS_IGNORE.has_value())
-                original_value = (original_value & ~(0b1 << 7 + 8 * 2)) | (TS_IGNORE.value() << 7);
+                original_value = (original_value & ~(0b1 << (7 + 8 * 2))) | (TS_IGNORE.value() << (7 + 8 * 2));
             if (TS_ISET_WARM.has_value())
-                original_value = (original_value & ~(0b11 << 2 + 8 * 2)) | (TS_ISET_WARM.value() << 2);
+                original_value = (original_value & ~(0b11 << (2 + 8 * 2))) | (TS_ISET_WARM.value() << (2 + 8 * 2));
             if (TS_ISET_COOL.has_value())
-                original_value = (original_value & ~(0b11 << 0 + 8 * 2)) | (TS_ISET_COOL.value() << 0);
+                original_value = (original_value & ~(0b11 << (0 + 8 * 2))) | (TS_ISET_COOL.value() << (0 + 8 * 2));
 
             if (TS_TH1_TH2_TH3.has_value())
-                original_value = (original_value & ~(0b111 << 5 + 8 * 1)) | (TS_TH1_TH2_TH3.value() << 5);
+                original_value = (original_value & ~(0b111 << (5 + 8 * 1))) | (TS_TH1_TH2_TH3.value() << (5 + 8 * 1));
             if (TS_TH4_TH5_TH6.has_value())
-                original_value = (original_value & ~(0b111 << 2 + 8 * 1)) | (TS_TH4_TH5_TH6.value() << 2);
+                original_value = (original_value & ~(0b111 << (2 + 8 * 1))) | (TS_TH4_TH5_TH6.value() << (2 + 8 * 1));
             if (TS_VSET_WARM.has_value())
-                original_value = (original_value & ~(0b11 << 0 + 8 * 1)) | (TS_VSET_WARM.value() << 0);
+                original_value = (original_value & ~(0b11 << (0 + 8 * 1))) | (TS_VSET_WARM.value() << (0 + 8 * 1));
 
             if (TS_VSET_SYM.has_value())
-                original_value = (original_value & ~(0b1 << 6 + 8 * 0)) | (TS_VSET_SYM.value() << 6);
+                original_value = (original_value & ~(0b1 << (6 + 8 * 0))) | (TS_VSET_SYM.value() << (6 + 8 * 0));
             if (TS_VSET_PREWARM.has_value())
-                original_value = (original_value & ~(0b11 << 4 + 8 * 0)) | (TS_VSET_PREWARM.value() << 4);
+                original_value = (original_value & ~(0b11 << (4 + 8 * 0))) | (TS_VSET_PREWARM.value() << (4 + 8 * 0));
             if (TS_ISET_PREWARM.has_value())
-                original_value = (original_value & ~(0b11 << 2 + 8 * 0)) | (TS_ISET_PREWARM.value() << 2);
+                original_value = (original_value & ~(0b11 << (2 + 8 * 0))) | (TS_ISET_PREWARM.value() << (2 + 8 * 0));
             if (TS_ISET_PRECOOL.has_value())
-                original_value = (original_value & ~(0b11 << 0 + 8 * 0)) | (TS_ISET_PRECOOL.value() << 0);
+                original_value = (original_value & ~(0b11 << (0 + 8 * 0))) | (TS_ISET_PRECOOL.value() << (0 + 8 * 0));
 
             return original_value;
         }
 
-        static TS_CONTROL_REG from_value(uint32_t value)
+        static NTC_CONTROL_REG from_value(uint32_t value)
         {
-            TS_CONTROL_REG reg;
-            reg.TS_IGNORE = (value >> 7 + 8 * 2) & 0b1;
-            reg.TS_ISET_WARM = static_cast<TS_ISET_TYPE>((value >> 2 + 8 * 2) & 0b11);
-            reg.TS_ISET_COOL = static_cast<TS_ISET_TYPE>((value >> 0 + 8 * 2) & 0b11);
+            NTC_CONTROL_REG reg;
+            reg.TS_IGNORE = (value >> (7 + 8 * 2)) & 0b1;
+            reg.TS_ISET_WARM = static_cast<TS_ISET_TYPE>((value >> (2 + 8 * 2)) & 0b11);
+            reg.TS_ISET_COOL = static_cast<TS_ISET_TYPE>((value >> (0 + 8 * 2)) & 0b11);
 
-            reg.TS_TH1_TH2_TH3 = (value >> 5 + 8 * 1) & 0b111;
-            reg.TS_TH4_TH5_TH6 = (value >> 2 + 8 * 1) & 0b111;
-            reg.TS_VSET_WARM = static_cast<TS_VSET_TYPE>((value >> 0 + 8 * 1) & 0b11);
+            reg.TS_TH1_TH2_TH3 = (value >> (5 + 8 * 1)) & 0b111;
+            reg.TS_TH4_TH5_TH6 = (value >> (2 + 8 * 1)) & 0b111;
+            reg.TS_VSET_WARM = static_cast<TS_VSET_TYPE>((value >> (0 + 8 * 1)) & 0b11);
 
-            reg.TS_VSET_SYM = (value >> 6 + 8 * 0) & 0b1;
-            reg.TS_VSET_PREWARM = static_cast<TS_VSET_TYPE>((value >> 4 + 8 * 0) & 0b11);
-            reg.TS_ISET_PREWARM = static_cast<TS_ISET_TYPE>((value >> 2 + 8 * 0) & 0b11);
-            reg.TS_ISET_PRECOOL = static_cast<TS_ISET_TYPE>((value >> 0 + 8 * 0) & 0b11);
+            reg.TS_VSET_SYM = (value >> (6 + 8 * 0)) & 0b1;
+            reg.TS_VSET_PREWARM = static_cast<TS_VSET_TYPE>((value >> (4 + 8 * 0)) & 0b11);
+            reg.TS_ISET_PREWARM = static_cast<TS_ISET_TYPE>((value >> (2 + 8 * 0)) & 0b11);
+            reg.TS_ISET_PRECOOL = static_cast<TS_ISET_TYPE>((value >> (0 + 8 * 0)) & 0b11);
 
             return reg;
         };
     };
 
-    typedef struct CHARGER_STATUS_REG
+    struct CHARGER_STATUS_REG
     {
         enum CHG_STAT_TYPE : uint8_t
         {
@@ -401,21 +401,21 @@ namespace BQ2562X_DEFS
         static CHARGER_STATUS_REG from_value(uint32_t value)
         {
             CHARGER_STATUS_REG reg;
-            reg.ADC_DONE_STAT = (value >> 6 + 8 * 1) & 0b1;
-            reg.TREG_STAT = (value >> 5 + 8 * 1) & 0b1;
-            reg.VSYS_STAT = (value >> 4 + 8 * 1) & 0b1;
-            reg.IINDPM_STAT = (value >> 3 + 8 * 1) & 0b1;
-            reg.VINDPM_STAT = (value >> 2 + 8 * 1) & 0b1;
-            reg.SAFETY_TMR_STAT = (value >> 1 + 8 * 1) & 0b1;
-            reg.WD_STAT = (value >> 0 + 8 * 1) & 0b1;
+            reg.ADC_DONE_STAT = (value >> (6 + 8 * 1)) & 0b1;
+            reg.TREG_STAT = (value >> (5 + 8 * 1)) & 0b1;
+            reg.VSYS_STAT = (value >> (4 + 8 * 1)) & 0b1;
+            reg.IINDPM_STAT = (value >> (3 + 8 * 1)) & 0b1;
+            reg.VINDPM_STAT = (value >> (2 + 8 * 1)) & 0b1;
+            reg.SAFETY_TMR_STAT = (value >> (1 + 8 * 1)) & 0b1;
+            reg.WD_STAT = (value >> (0 + 8 * 1)) & 0b1;
 
-            reg.CHG_STAT = static_cast<CHG_STAT_TYPE>((value >> 3 + 8 * 0) & 0b11);
-            reg.VBUS_STAT = static_cast<VBUS_STAT_TYPE>((value >> 0 + 8 * 0) & 0b111);
+            reg.CHG_STAT = static_cast<CHG_STAT_TYPE>((value >> (3 + 8 * 0)) & 0b11);
+            reg.VBUS_STAT = static_cast<VBUS_STAT_TYPE>((value >> (0 + 8 * 0)) & 0b111);
             return reg;
         };
     };
 
-    typedef struct FAULT_STATUS_REG
+    struct FAULT_STATUS_REG
     {
         enum TS_STAT_TYPE : uint8_t
         {
@@ -438,7 +438,7 @@ namespace BQ2562X_DEFS
 
         // register not writable
 
-        static FAULT_STATUS_REG from_value(uint32_t value)
+        static FAULT_STATUS_REG from_byte(uint8_t value)
         {
             FAULT_STATUS_REG reg;
             reg.VBUS_FAULT_STAT = (value >> 7) & 0b1;
@@ -446,10 +446,11 @@ namespace BQ2562X_DEFS
             reg.SYS_FAULT_STAT = (value >> 5) & 0b1;
             reg.TSHUT_STAT = (value >> 3) & 0b1;
             reg.TS_STAT = static_cast<TS_STAT_TYPE>((value >> 0) & 0b111);
+            return reg;
         };
     };
 
-    typedef struct CHARGER_FLAG_REG
+    struct CHARGER_FLAG_REG
     {
         // bit 7 reserved
         std::optional<bool> ADC_DONE_FLAG;
@@ -470,21 +471,21 @@ namespace BQ2562X_DEFS
         static CHARGER_FLAG_REG from_value(uint32_t value)
         {
             CHARGER_FLAG_REG reg;
-            reg.ADC_DONE_FLAG = (value >> 6 + 8 * 1) & 0b1;
-            reg.TREG_FLAG = (value >> 5 + 8 * 1) & 0b1;
-            reg.VSYS_FLAG = (value >> 4 + 8 * 1) & 0b1;
-            reg.IINDPM_FLAG = (value >> 3 + 8 * 1) & 0b1;
-            reg.VINDPM_FLAG = (value >> 2 + 8 * 1) & 0b1;
-            reg.SAFETY_TMR_FLAG = (value >> 1 + 8 * 1) & 0b1;
-            reg.WD_FLAG = (value >> 0 + 8 * 1) & 0b1;
+            reg.ADC_DONE_FLAG = (value >> (6 + 8 * 1)) & 0b1;
+            reg.TREG_FLAG = (value >> (5 + 8 * 1)) & 0b1;
+            reg.VSYS_FLAG = (value >> (4 + 8 * 1)) & 0b1;
+            reg.IINDPM_FLAG = (value >> (3 + 8 * 1)) & 0b1;
+            reg.VINDPM_FLAG = (value >> (2 + 8 * 1)) & 0b1;
+            reg.SAFETY_TMR_FLAG = (value >> (1 + 8 * 1)) & 0b1;
+            reg.WD_FLAG = (value >> (0 + 8 * 1)) & 0b1;
 
-            reg.CHG_FLAG = (value >> 3 + 8 * 0) & 0b1;
-            reg.VBUS_FLAG = (value >> 0 + 8 * 0) & 0b1;
+            reg.CHG_FLAG = (value >> (3 + 8 * 0)) & 0b1;
+            reg.VBUS_FLAG = (value >> (0 + 8 * 0)) & 0b1;
             return reg;
         };
     };
 
-    typedef struct FAULT_FLAG_REG
+    struct FAULT_FLAG_REG
     {
         std::optional<bool> VBUS_FAULT_FLAG;
         std::optional<bool> BAT_FAULT_FLAG;
@@ -496,7 +497,7 @@ namespace BQ2562X_DEFS
 
         // register not writable
 
-        static FAULT_FLAG_REG from_value(uint32_t value)
+        static FAULT_FLAG_REG from_byte(uint8_t value)
         {
             FAULT_FLAG_REG reg;
             reg.VBUS_FAULT_FLAG = (value >> 7) & 0b1;
@@ -508,7 +509,7 @@ namespace BQ2562X_DEFS
         };
     };
 
-    typedef struct CHARGER_MASK_REG
+    struct CHARGER_MASK_REG
     {
         // bit 7 reserved
         std::optional<bool> ADC_DONE_MASK;
@@ -527,45 +528,45 @@ namespace BQ2562X_DEFS
         uint32_t to_value(uint32_t original_value = 0) const
         {
             if (ADC_DONE_MASK.has_value())
-                original_value = (original_value & ~(0b1 << 6 + 8 * 1)) | (ADC_DONE_MASK.value() << 6);
+                original_value = (original_value & ~(0b1 << (6 + 8 * 1))) | (ADC_DONE_MASK.value() << (6 + 8 * 1));
             if (TREG_MASK.has_value())
-                original_value = (original_value & ~(0b1 << 5 + 8 * 1)) | (TREG_MASK.value() << 5);
+                original_value = (original_value & ~(0b1 << (5 + 8 * 1))) | (TREG_MASK.value() << (5 + 8 * 1));
             if (VSYS_MASK.has_value())
-                original_value = (original_value & ~(0b1 << 4 + 8 * 1)) | (VSYS_MASK.value() << 4);
+                original_value = (original_value & ~(0b1 << (4 + 8 * 1))) | (VSYS_MASK.value() << (4 + 8 * 1));
             if (IINDPM_MASK.has_value())
-                original_value = (original_value & ~(0b1 << 3 + 8 * 1)) | (IINDPM_MASK.value() << 3);
+                original_value = (original_value & ~(0b1 << (3 + 8 * 1))) | (IINDPM_MASK.value() << (3 + 8 * 1));
             if (VINDPM_MASK.has_value())
-                original_value = (original_value & ~(0b1 << 2 + 8 * 1)) | (VINDPM_MASK.value() << 2);
+                original_value = (original_value & ~(0b1 << (2 + 8 * 1))) | (VINDPM_MASK.value() << (2 + 8 * 1));
             if (SAFETY_TMR_MASK.has_value())
-                original_value = (original_value & ~(0b1 << 1 + 8 * 1)) | (SAFETY_TMR_MASK.value() << 1);
+                original_value = (original_value & ~(0b1 << (1 + 8 * 1))) | (SAFETY_TMR_MASK.value() << (1 + 8 * 1));
             if (WD_MASK.has_value())
-                original_value = (original_value & ~(0b1 << 0 + 8 * 1)) | (WD_MASK.value() << 0);
+                original_value = (original_value & ~(0b1 << (0 + 8 * 1))) | (WD_MASK.value() << (0 + 8 * 1));
 
             if (CHG_MASK.has_value())
-                original_value = (original_value & ~(0b1 << 3 + 8 * 0)) | (CHG_MASK.value() << 3);
+                original_value = (original_value & ~(0b1 << (3 + 8 * 0))) | (CHG_MASK.value() << (3 + 8 * 0));
             if (VBUS_MASK.has_value())
-                original_value = (original_value & ~(0b1 << 0 + 8 * 0)) | (VBUS_MASK.value() << 0);
+                original_value = (original_value & ~(0b1 << (0 + 8 * 0))) | (VBUS_MASK.value() << (0 + 8 * 0));
             return original_value;
         }
 
         static CHARGER_MASK_REG from_value(uint32_t value)
         {
             CHARGER_MASK_REG reg;
-            reg.ADC_DONE_MASK = (value >> 6 + 8 * 1) & 0b1;
-            reg.TREG_MASK = (value >> 5 + 8 * 1) & 0b1;
-            reg.VSYS_MASK = (value >> 4 + 8 * 1) & 0b1;
-            reg.IINDPM_MASK = (value >> 3 + 8 * 1) & 0b1;
-            reg.VINDPM_MASK = (value >> 2 + 8 * 1) & 0b1;
-            reg.SAFETY_TMR_MASK = (value >> 1 + 8 * 1) & 0b1;
-            reg.WD_MASK = (value >> 0 + 8 * 1) & 0b1;
+            reg.ADC_DONE_MASK = (value >> (6 + 8 * 1)) & 0b1;
+            reg.TREG_MASK = (value >> (5 + 8 * 1)) & 0b1;
+            reg.VSYS_MASK = (value >> (4 + 8 * 1)) & 0b1;
+            reg.IINDPM_MASK = (value >> (3 + 8 * 1)) & 0b1;
+            reg.VINDPM_MASK = (value >> (2 + 8 * 1)) & 0b1;
+            reg.SAFETY_TMR_MASK = (value >> (1 + 8 * 1)) & 0b1;
+            reg.WD_MASK = (value >> (0 + 8 * 1)) & 0b1;
 
-            reg.CHG_MASK = (value >> 3 + 8 * 0) & 0b1;
-            reg.VBUS_MASK = (value >> 0 + 8 * 0) & 0b1;
+            reg.CHG_MASK = (value >> (3 + 8 * 0)) & 0b1;
+            reg.VBUS_MASK = (value >> (0 + 8 * 0)) & 0b1;
             return reg;
         };
     };
 
-    typedef struct FAULT_MASK_REG
+    struct FAULT_MASK_REG
     {
         std::optional<bool> VBUS_FAULT_MASK;
         std::optional<bool> BAT_FAULT_MASK;
@@ -575,7 +576,7 @@ namespace BQ2562X_DEFS
         // bits 2:1 reserved
         std::optional<bool> TS_MASK;
 
-        uint32_t to_value(uint32_t original_value = 0) const
+        uint8_t to_byte(uint8_t original_value = 0) const
         {
             if (VBUS_FAULT_MASK.has_value())
                 original_value = (original_value & ~(0b1 << 7)) | (VBUS_FAULT_MASK.value() << 7);
@@ -590,7 +591,7 @@ namespace BQ2562X_DEFS
             return original_value;
         }
 
-        static FAULT_MASK_REG from_value(uint32_t value)
+        static FAULT_MASK_REG from_byte(uint8_t value)
         {
             FAULT_MASK_REG reg;
             reg.VBUS_FAULT_MASK = (value >> 7) & 0b1;
@@ -602,7 +603,7 @@ namespace BQ2562X_DEFS
         };
     };
 
-    typedef struct ADC_CONTROL_REG
+    struct ADC_CONTROL_REG
     {
         enum ADC_RATE_TYPE : uint8_t
         {
@@ -664,7 +665,7 @@ namespace BQ2562X_DEFS
         }
     };
 
-    typedef struct ADC_FUNCTION_DISABLE_REG
+    struct ADC_FUNCTION_DISABLE_REG
     {
         std::optional<bool> IBUS_ADC_DIS;
         std::optional<bool> IBAT_ADC_DIS;

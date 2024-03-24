@@ -9,56 +9,6 @@ namespace BQ27426_DEFS
     constexpr uint16_t BQ27426_UNSEAL_KEY = 0x8000; // Secret code to unseal the BQ27426-G1A
     constexpr uint16_t BQ27426_DEVICE_ID = 0x0426;  // Default device ID
 
-    // Parameters for the current() function, to specify which current to read
-    typedef enum
-    {
-        AVG,  // Average Current (DEFAULT)
-        STBY, // Standby Current
-        MAX   // Max Current
-    } current_measure;
-
-    // Parameters for the capacity() function, to specify which capacity to read
-    typedef enum
-    {
-        REMAIN,     // Remaining Capacity (DEFAULT)
-        FULL,       // Full Capacity
-        AVAIL,      // Available Capacity
-        AVAIL_FULL, // Full Available Capacity
-        REMAIN_F,   // Remaining Capacity Filtered
-        REMAIN_UF,  // Remaining Capacity Unfiltered
-        FULL_F,     // Full Capacity Filtered
-        FULL_UF,    // Full Capacity Unfiltered
-        DESIGN      // Design Capacity
-    } capacity_measure;
-
-    // Parameters for the soc() function
-    typedef enum
-    {
-        FILTERED,  // State of Charge Filtered (DEFAULT)
-        UNFILTERED // State of Charge Unfiltered
-    } soc_measure;
-
-    // Parameters for the soh() function
-    typedef enum
-    {
-        PERCENT, // State of Health Percentage (DEFAULT)
-        SOH_STAT // State of Health Status Bits
-    } soh_measure;
-
-    // Parameters for the temperature() function
-    typedef enum
-    {
-        BATTERY,      // Battery Temperature (DEFAULT)
-        INTERNAL_TEMP // Internal IC Temperature
-    } temp_measure;
-
-    // Parameters for the setGPOUTFunction() funciton
-    typedef enum
-    {
-        SOC_INT, // Set GPOUT to SOC_INT functionality
-        BAT_LOW  // Set GPOUT to BAT_LOW functionality
-    } gpout_function;
-
     typedef enum : uint8_t
     {
         BQ27426_COMMAND_CONTROL = 0x00,        // Control()

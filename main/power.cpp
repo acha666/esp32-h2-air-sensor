@@ -4,6 +4,7 @@
 #include "bq27426.h"
 #include "bq2562x.h"
 #include "bq2562x_defs.h"
+#include <iostream>
 
 static void power_i2c_init(void);
 
@@ -23,11 +24,9 @@ extern "C" void PowerTask(void *pvParameters)
     uint32_t val = Charger->getChargeCurrent();
     ESP_LOGI(TAG, "Charge Current: %ld mA", val);
 
-    val = Charger->getChargerControl();
-    ESP_LOGI(TAG, "Charger Control: 0x%08lx", val);
+    Charger->resetRegister();
 
     xSemaphoreGive(xI2CSemaphore);
-
     vTaskDelete(NULL);
 }
 
@@ -45,6 +44,30 @@ static void power_i2c_init(void)
     ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_mst_config, &power_i2c_master_bus_handle));
 
     return;
+}
+
+static void print_charger_control(BQ2562X_DEFS::CHARGER_CONTROL_REG chargerControl)
+{
+    printf("EN_AUTO_IBATDIS = 0x%02x\n", chargerControl.EN_AUTO_IBATDIS.value());
+    printf("FORCE_IBATDIS = 0x%02x\n", chargerControl.FORCE_IBATDIS.value());
+    printf("EN_CHG = 0x%02x\n", chargerControl.EN_CHG.value());
+    printf("EN_HIZ = 0x%02x\n", chargerControl.EN_HIZ.value());
+    printf("FORCE_PMID_DIS = 0x%02x\n", chargerControl.FORCE_PMID_DIS.value());
+    printf("WD_RST = 0x%02x\n", chargerControl.WD_RST.value());
+    printf("WATCHDOG = 0x%02x\n", chargerControl.WATCHDOG.value());
+    printf("REG_RST = 0x%02x\n", chargerControl.REG_RST.value());
+    printf("TREG = 0x%02x\n", chargerControl.TREG.value());
+    printf("SET_CONV_FREQ = 0x%02x\n", chargerControl.SET_CONV_FREQ.value());
+    printf("SET_CONV_STRN = 0x%02x\n", chargerControl.SET_CONV_STRN.value());
+    printf("VBUS_OVP = 0x%02x\n", chargerControl.VBUS_OVP.value());
+    printf("PFM_FWD_DIS = 0x%02x\n", chargerControl.PFM_FWD_DIS.value());
+    printf("BATFET_CTRL_WVBUS = 0x%02x\n", chargerControl.BATFET_CTRL_WVBUS.value());
+    printf("BATFET_DLY = 0x%02x\n", chargerControl.BATFET_DLY.value());
+    printf("BATFET_CTRL = 0x%02x\n", chargerControl.BATFET_CTRL.value());
+    printf("IBAT_PK = 0x%02x\n", chargerControl.IBAT_PK.value());
+    printf("VBAT_UVLO = 0x%02x\n", chargerControl.VBAT_UVLO.value());
+    printf("EN_EXTILIM = 0x%02x\n", chargerControl.EN_EXTILIM.value());
+    printf("CHG_RATE = 0x%02x\n", chargerControl.CHG_RATE.value());
 }
 
 extern "C" void BQScanTask()

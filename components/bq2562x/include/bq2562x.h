@@ -9,130 +9,95 @@
 class BQ2562x
 {
 public:
-    struct Register
-    {
-        uint8_t address;
-        uint8_t size;
-        uint8_t start;
-        uint8_t end;
-    };
-
-    enum class VBUSStat
-    {
-        None,
-        Adapter
-    };
-
-    enum class ChargeStat
-    {
-        Terminated,
-        Trickle,
-        Taper,
-        TopOff
-    };
-
-    enum class ADCRate
-    {
-        Oneshot,
-        Continuous,
-    };
-
-    enum class ADCSampling
-    {
-        Bits_12,
-        Bits_11,
-        Bits_10,
-        Bits_9,
-    };
-
-    enum class ADCAverage
-    {
-        Single,
-        Running,
-    };
-
-    enum class ADCAverageInit
-    {
-        Existing,
-        New,
-    };
-
-    enum class BATFETControl
-    {
-        Normal,
-        ShutdownMode,
-        ShipMode,
-        SystemPowerReset
-    };
-
-    enum class BATFETDelay
-    {
-        Delay20ms,
-        Delay10s,
-    };
-
-    enum class Interrupt : uint8_t
-    {
-        VBUS
-    };
-
-    enum class Adc : uint8_t
-    {
-        IBUS = 7,
-        IBAT = 6,
-        VBUS = 5,
-        VBAT = 4,
-        VSYS = 3,
-        TS = 2,
-        TDIE = 1,
-        VPMID = 0
-    };
-
-    enum WatchDogTimerConf : uint8_t
-    {
-        WATCH_DOG_DISABLE = 0x0,
-        WATCH_DOG_50S = 0x1,
-        WATCH_DOG_100S = 0x2,
-        WATCH_DOG_200S = 0x3
-    };
 
     BQ2562x(i2c_master_bus_handle_t bus_handle, uint8_t address);
     ~BQ2562x();
 
+    /** REG0x02_Charge_Current_Limit **/
     void setChargeCurrent(uint16_t current);
     uint16_t getChargeCurrent();
 
+    /** REG0x04_Charge_Voltage_Limit **/
     void setChargeVoltage(uint16_t voltage);
     uint16_t getChargeVoltage();
 
+    /** REG0x06_Input_Current_Limit **/
     void setInputCurrent(uint16_t current);
     uint16_t getInputCurrent();
 
+    /** REG0x08_Input_Voltage_Limit **/
     void setInputVoltage(uint16_t voltage);
     uint16_t getInputVoltage();
 
+    /** REG0x0E_Minimal_System_Voltage **/
     void setMinimalSystemVoltage(uint16_t voltage);
     uint16_t getMinimalSystemVoltage();
 
+    /** REG0x10_Pre-charge_Control **/
     void setPreChargeCurrent(uint8_t current);
     uint8_t getPreChargeCurrent();
 
+    /** REG0x12_Termination_Control **/
     void setTerminationCurrent(uint8_t current);
     uint8_t getTerminationCurrent();
 
-    void setWatchDog(WatchDogTimerConf timer);
-    WatchDogTimerConf getWatchDog();
-
-    void setChargeControl(BQ2562X_DEFS::CHARGE_CONTROL_REG charge_control);
+    /** REG0x14_Charge_Control **/
+    void setChargeControl(BQ2562X_DEFS::CHARGE_CONTROL_REG reg);
     BQ2562X_DEFS::CHARGE_CONTROL_REG getChargeControl();
+    uint8_t getChargeControlRaw();
 
-    void setChargeTimerControl(BQ2562X_DEFS::CHARGE_TIMER_CONTROL_REG control);
+    /** REG0x15_Charge_Timer_Control **/
+    void setChargeTimerControl(BQ2562X_DEFS::CHARGE_TIMER_CONTROL_REG reg);
     BQ2562X_DEFS::CHARGE_TIMER_CONTROL_REG getChargeTimerControl();
+    uint8_t getChargeTimerControlRaw();
 
-    // void setChargerControl(BQ2562X_DEFS::CHARGER_CONTROL_REG control);
-    // BQ2562X_DEFS::CHARGER_CONTROL_REG getChargerControl();
-    uint32_t getChargerControl();
+    /** REG0x16_Charger_Control_0, REG0x17_Charger_Control_1, REG0x18_Charger_Control_2, REG0x19_Charger_Control_3 **/
+    void setChargerControl(BQ2562X_DEFS::CHARGER_CONTROL_REG reg);
+    BQ2562X_DEFS::CHARGER_CONTROL_REG getChargerControl();
+    uint32_t getChargerControlRaw();
 
+    /** REG0x1A_NTC_Control_0, REG0x1B_NTC_Control_1, REG0x1C_NTC_Control_2 **/
+    void setNTCControl(BQ2562X_DEFS::NTC_CONTROL_REG reg);
+    BQ2562X_DEFS::NTC_CONTROL_REG getNTCControl();
+    uint32_t getNTCControlRaw();
+
+    /** REG0x1D_Charger_Status_0, REG0x1E_Charger_Status_1 **/
+    BQ2562X_DEFS::CHARGER_STATUS_REG getChargerStatus();
+    uint32_t getChargerStatusRaw();
+
+    /** REG0x1F_FAULT_Status_0 **/
+    BQ2562X_DEFS::FAULT_STATUS_REG getFaultStatus();
+    uint8_t getFaultStatusRaw();
+
+    /** REG0x20_Charger_Flag_0, REG0x21_Charger_Flag_1 **/
+    BQ2562X_DEFS::CHARGER_FLAG_REG getChargerFlag();
+    uint8_t getChargerFlagRaw();
+
+    /** REG0x22_FAULT_Flag_0 **/
+    BQ2562X_DEFS::FAULT_FLAG_REG getFaultFlag();
+    uint8_t getFaultFlagRaw();
+
+    /** REG0x23_Charger_Mask_0, REG0x24_Charger_Mask_1 **/
+    void setChargerMask(BQ2562X_DEFS::CHARGER_MASK_REG reg);
+    BQ2562X_DEFS::CHARGER_MASK_REG getChargerMask();
+    uint8_t getChargerMaskRaw();
+
+    /** REG0x25_FAULT_Mask_0 **/
+    void setFaultMask(BQ2562X_DEFS::FAULT_MASK_REG reg);
+    BQ2562X_DEFS::FAULT_MASK_REG getFaultMask();
+    uint8_t getFaultMaskRaw();
+
+    /** REG0x26_ADC_Control **/
+    void setADCControl(BQ2562X_DEFS::ADC_CONTROL_REG reg);
+    BQ2562X_DEFS::ADC_CONTROL_REG getADCControl();
+    uint8_t getADCControlRaw();
+
+    /** REG0x27_ADC_Function_Disable_0 **/
+    void setADCFunctionDisable(BQ2562X_DEFS::ADC_FUNCTION_DISABLE_REG reg);
+    BQ2562X_DEFS::ADC_FUNCTION_DISABLE_REG getADCFunctionDisable();
+    uint8_t getADCFunctionDisableRaw();
+
+    void resetWatchDog();
     void resetRegister();
 
     uint8_t getPartNumber();

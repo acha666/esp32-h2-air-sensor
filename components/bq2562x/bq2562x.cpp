@@ -275,6 +275,7 @@ uint8_t BQ2562x::getTerminationCurrent()
     return reg_bits.read() * 5;
 }
 
+/********************** REG0x14_Charge_Control **********************/
 void BQ2562x::setChargeControl(BQ2562X_DEFS::CHARGE_CONTROL_REG control)
 {
     uint8_t reg_value = _regChargeControl.read();
@@ -288,6 +289,12 @@ BQ2562X_DEFS::CHARGE_CONTROL_REG BQ2562x::getChargeControl()
     return BQ2562X_DEFS::CHARGE_CONTROL_REG::from_byte(reg_value);
 }
 
+uint8_t BQ2562x::getChargeControlRaw()
+{
+    return _regChargeControl.read();
+}
+
+/********************** REG0x15_Charge_Timer_Control **********************/
 void BQ2562x::setChargeTimerControl(BQ2562X_DEFS::CHARGE_TIMER_CONTROL_REG control)
 {
     uint8_t reg_value = _regChargeTimerControl.read();
@@ -301,26 +308,182 @@ BQ2562X_DEFS::CHARGE_TIMER_CONTROL_REG BQ2562x::getChargeTimerControl()
     return BQ2562X_DEFS::CHARGE_TIMER_CONTROL_REG::from_byte(reg_value);
 }
 
-uint32_t BQ2562x::getChargerControl()
+uint8_t BQ2562x::getChargeTimerControlRaw()
+{
+    return _regChargeTimerControl.read();
+}
+
+/********************** REG0x16-0x19_Charger_Control **********************/
+void BQ2562x::setChargerControl(BQ2562X_DEFS::CHARGER_CONTROL_REG control)
+{
+    uint32_t reg_value = _regChargerControl.read();
+    reg_value = control.to_value(reg_value);
+    _regChargerControl.write(reg_value);
+}
+
+BQ2562X_DEFS::CHARGER_CONTROL_REG BQ2562x::getChargerControl()
+{
+    uint32_t reg_value = _regChargerControl.read();
+    return BQ2562X_DEFS::CHARGER_CONTROL_REG::from_value(reg_value);
+}
+
+uint32_t BQ2562x::getChargerControlRaw()
 {
     return _regChargerControl.read();
 }
 
-void BQ2562x::setWatchDog(WatchDogTimerConf timer)
+/********************** REG0x1A-0x1C_NTC_Control **********************/
+void BQ2562x::setNTCControl(BQ2562X_DEFS::NTC_CONTROL_REG control)
 {
-    auto reg_bits = I2C_RegisterBits(&_regChargerControl, 2, 24);
-    reg_bits.write(static_cast<uint8_t>(timer));
+    uint32_t reg_value = _regNTCControl.read();
+    reg_value = control.to_value(reg_value);
+    _regNTCControl.write(reg_value);
 }
 
-BQ2562x::WatchDogTimerConf BQ2562x::getWatchDog()
+BQ2562X_DEFS::NTC_CONTROL_REG BQ2562x::getNTCControl()
 {
-    auto reg_bits = I2C_RegisterBits(&_regChargerControl, 2, 24);
-    return static_cast<WatchDogTimerConf>(reg_bits.read());
+    uint32_t reg_value = _regNTCControl.read();
+    return BQ2562X_DEFS::NTC_CONTROL_REG::from_value(reg_value);
+}
+
+uint32_t BQ2562x::getNTCControlRaw()
+{
+    return _regNTCControl.read();
+}
+
+/********************** REG0x1D-0x1E_Charger_Status **********************/
+BQ2562X_DEFS::CHARGER_STATUS_REG BQ2562x::getChargerStatus()
+{
+    uint32_t reg_value = _regChargerStatus.read();
+    return BQ2562X_DEFS::CHARGER_STATUS_REG::from_value(reg_value);
+}
+
+uint32_t BQ2562x::getChargerStatusRaw()
+{
+    return _regChargerStatus.read();
+}
+
+/********************** REG0x1F_FAULT_Status_0 **********************/
+BQ2562X_DEFS::FAULT_STATUS_REG BQ2562x::getFaultStatus()
+{
+    uint8_t reg_value = _regFaultStatus0.read();
+    return BQ2562X_DEFS::FAULT_STATUS_REG::from_byte(reg_value);
+}
+
+uint8_t BQ2562x::getFaultStatusRaw()
+{
+    return _regFaultStatus0.read();
+}
+
+/********************** REG0x20-0x21_Charger_Flag **********************/
+BQ2562X_DEFS::CHARGER_FLAG_REG BQ2562x::getChargerFlag()
+{
+    uint32_t reg_value = _regChargerFlag.read();
+    return BQ2562X_DEFS::CHARGER_FLAG_REG::from_value(reg_value);
+}
+
+uint8_t BQ2562x::getChargerFlagRaw()
+{
+    return _regChargerFlag.read();
+}
+
+/********************** REG0x22_FAULT_Flag_0 **********************/
+BQ2562X_DEFS::FAULT_FLAG_REG BQ2562x::getFaultFlag()
+{
+    uint8_t reg_value = _regFaultFlag0.read();
+    return BQ2562X_DEFS::FAULT_FLAG_REG::from_byte(reg_value);
+}
+
+uint8_t BQ2562x::getFaultFlagRaw()
+{
+    return _regFaultFlag0.read();
+}
+
+/********************** REG0x23-0x24_Charger_Mask **********************/
+void BQ2562x::setChargerMask(BQ2562X_DEFS::CHARGER_MASK_REG mask)
+{
+    uint32_t reg_value = _regChargerMask.read();
+    reg_value = mask.to_value(reg_value);
+    _regChargerMask.write(reg_value);
+}
+
+BQ2562X_DEFS::CHARGER_MASK_REG BQ2562x::getChargerMask()
+{
+    uint32_t reg_value = _regChargerMask.read();
+    return BQ2562X_DEFS::CHARGER_MASK_REG::from_value(reg_value);
+}
+
+uint8_t BQ2562x::getChargerMaskRaw()
+{
+    return _regChargerMask.read();
+}
+
+/********************** REG0x25_FAULT_Mask_0 **********************/
+void BQ2562x::setFaultMask(BQ2562X_DEFS::FAULT_MASK_REG mask)
+{
+    uint8_t reg_value = _regFaultMask0.read();
+    reg_value = mask.to_byte(reg_value);
+    _regFaultMask0.write(reg_value);
+}
+
+BQ2562X_DEFS::FAULT_MASK_REG BQ2562x::getFaultMask()
+{
+    uint8_t reg_value = _regFaultMask0.read();
+    return BQ2562X_DEFS::FAULT_MASK_REG::from_byte(reg_value);
+}
+
+uint8_t BQ2562x::getFaultMaskRaw()
+{
+    return _regFaultMask0.read();
+}
+
+/********************** REG0x26_ADC_Control **********************/
+void BQ2562x::setADCControl(BQ2562X_DEFS::ADC_CONTROL_REG control)
+{
+    uint8_t reg_value = _regADCControl.read();
+    reg_value = control.to_byte(reg_value);
+    _regADCControl.write(reg_value);
+}
+
+BQ2562X_DEFS::ADC_CONTROL_REG BQ2562x::getADCControl()
+{
+    uint8_t reg_value = _regADCControl.read();
+    return BQ2562X_DEFS::ADC_CONTROL_REG::from_byte(reg_value);
+}
+
+uint8_t BQ2562x::getADCControlRaw()
+{
+    return _regADCControl.read();
+}
+
+/********************** REG0x27_ADC_Function_Disable_0 **********************/
+void BQ2562x::setADCFunctionDisable(BQ2562X_DEFS::ADC_FUNCTION_DISABLE_REG reg)
+{
+    uint8_t reg_value = _regADCFunctionDisable0.read();
+    reg_value = reg.to_byte(reg_value);
+    _regADCFunctionDisable0.write(reg_value);
+}
+
+BQ2562X_DEFS::ADC_FUNCTION_DISABLE_REG BQ2562x::getADCFunctionDisable()
+{
+    uint8_t reg_value = _regADCFunctionDisable0.read();
+    return BQ2562X_DEFS::ADC_FUNCTION_DISABLE_REG::from_byte(reg_value);
+}
+
+uint8_t BQ2562x::getADCFunctionDisableRaw()
+{
+    return _regADCFunctionDisable0.read();
+}
+
+void BQ2562x::resetWatchDog()
+{
+    auto reg_bits = I2C_RegisterBits(&_regChargerControl, 1, 2 + 8 * 3);
+    reg_bits.write(1);
 }
 
 void BQ2562x::resetRegister()
 {
-    auto reg_bits = I2C_RegisterBits(&_regChargerControl, 1, 23);
+    auto reg_bits = I2C_RegisterBits(&_regChargerControl, 1, 7 + 8 * 2);
     reg_bits.write(1);
 }
 
