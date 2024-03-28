@@ -1,4 +1,3 @@
-idf_component_register(SRCS "epd1in54.cpp" "epd1in54.cpp"
-                    SOURCE_DIR "fonts"
+idf_component_register(SRCS "epd1in54.cpp"
                     INCLUDE_DIRS "include"
-                    requires driver)
+                    REQUIRES driver)

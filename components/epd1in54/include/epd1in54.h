@@ -1,47 +1,41 @@
-/*****************************************************************************
-* | File      	:   EPD_1in54_V2.h
-* | Author      :   Waveshare team
-* | Function    :   1.54inch e-paper V2
-* | Info        :
-*----------------
-* |	This version:   V1.0
-* | Date        :   2019-06-11
-* | Info        :   
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documnetation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to  whom the Software is
-# furished to do so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in
-# all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS OR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-# THE SOFTWARE.
-#
-******************************************************************************/
-#ifndef __EPD_1IN54_V2_H_
-#define __EPD_1IN54_V2_H_
+#ifndef __EPD1IN54_H__
+#define __EPD1IN54_H__
 
-#include "DEV_Config.h"
+#include "esp_types.h"
+#include "driver/gpio.h"
 
-// Display resolution
-#define EPD_1IN54_V2_WIDTH       200
-#define EPD_1IN54_V2_HEIGHT      200
+class EPD1IN54
+{
+public:
+    EPD1IN54();
+    ~EPD1IN54();
 
-void EPD_1IN54_V2_Init(void);
-void EPD_1IN54_V2_Init_Partial(void);
-void EPD_1IN54_V2_Clear(void);
-void EPD_1IN54_V2_Display(UBYTE *Image);
-void EPD_1IN54_V2_DisplayPartBaseImage(UBYTE *Image);
-void EPD_1IN54_V2_DisplayPart(UBYTE *Image);
-void EPD_1IN54_V2_Sleep(void);
+    void init(void);
+    void initPartial(void);
+    void clear(void);
+    void display(uint8_t *Image);
+    void displayPartBaseImage(uint8_t *Image);
+    void displayPart(uint8_t *Image);
+    void sleep(void);
+private:
+    uint8_t _displayHeight=200;
+    uint8_t _displayWidth=200;
+
+    gpio_num_t _csPin;
+    gpio_num_t _dcPin;
+    gpio_num_t _rstPin;
+    gpio_num_t _busyPin;
+
+    void reset();
+    void sendCommand(uint8_t Reg);
+    void sendData(uint8_t Data);
+    void readBusy(void);
+    void turnOnDisplay(void);
+    void turnOnDisplayPart(void);
+    void lut(uint8_t *lut);
+    void setLut(uint8_t *lut);
+    void setWindows(uint16_t Xstart, uint16_t Ystart, uint16_t Xend, uint16_t Yend);
+    void setCursor(uint16_t Xstart, uint16_t Ystart);
+};
 
 #endif
