@@ -95,7 +95,13 @@ void ZigbeeTask(void *pvParameters)
 
     // ------------------------------ Create endpoint list ------------------------------
     esp_zb_ep_list_t *esp_zb_ep_list = esp_zb_ep_list_create();
-    esp_zb_ep_list_add_ep(esp_zb_ep_list, esp_zb_cluster_list, HA_SENSOR_ENDPOINT, ESP_ZB_AF_HA_PROFILE_ID, ESP_ZB_HA_SIMPLE_SENSOR_DEVICE_ID);
+    esp_zb_endpoint_config_t ep_config={
+        .endpoint = HA_SENSOR_ENDPOINT,
+        .app_profile_id = ESP_ZB_AF_HA_PROFILE_ID,
+        .app_device_id = ESP_ZB_HA_SIMPLE_SENSOR_DEVICE_ID,
+        .app_device_version = 0,
+    };
+    esp_zb_ep_list_add_ep(esp_zb_ep_list, esp_zb_cluster_list, ep_config);
 
     // ------------------------------ Register Device ------------------------------
     esp_zb_device_register(esp_zb_ep_list);

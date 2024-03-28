@@ -87,12 +87,16 @@ void I2CScanTask(int i2c_gpio_sda, int i2c_gpio_scl)
     // vTaskDelete(NULL);
 }
 
+void vTaskDiplay(void *pvParameters);
+
 void app_main(void)
 {
-    I2CScanTask(26,27);
-    I2CScanTask(2,3);
-    xI2CSemaphore = xSemaphoreCreateMutex();
-    xTaskCreate(PowerTask, "Power_Task", 4096, NULL, 5, NULL);
+    xTaskCreate(vTaskDiplay, "Display_Task", 4096, NULL, 5, NULL);
+
+    // I2CScanTask(26,27);
+    // I2CScanTask(2,3);
+    // xI2CSemaphore = xSemaphoreCreateMutex();
+    // xTaskCreate(PowerTask, "Power_Task", 4096, NULL, 5, NULL);
 
     // sensorDataQueue = xQueueCreate(10, sizeof(sensorData_t));
     // assert(sensorDataQueue != NULL);
