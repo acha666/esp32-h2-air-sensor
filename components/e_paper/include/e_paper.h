@@ -5,23 +5,18 @@
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
 
-class EPD1IN54
+class SPI_Epaper
 {
 public:
-    EPD1IN54(gpio_num_t dc_pin, gpio_num_t rst_pin, gpio_num_t busy_pin, spi_device_handle_t spi_device);
-    ~EPD1IN54();
+    SPI_Epaper(gpio_num_t dc_pin, gpio_num_t rst_pin, gpio_num_t busy_pin, spi_device_handle_t spi_device);
+    ~SPI_Epaper();
 
-    void init(void);
-    void initPartial(void);
-    void clear(void);
-    void display(uint8_t *Image);
-    void displayPartBaseImage(uint8_t *Image);
-    void displayPart(uint8_t *Image);
-    void sleep(void);
+    virtual void init() = 0;
+    virtual void clearDisplay() = 0;
+    virtual void sleep() = 0;
 
-private:
-    uint8_t _displayHeight = 200;
-    uint8_t _displayWidth = 200;
+protected:
+    const uint16_t _busyTimeout = 5000; // in ms
 
     spi_device_handle_t _spiDev;
 
@@ -36,12 +31,6 @@ private:
     void _sendData(uint8_t *Data, uint16_t Length);
 
     void _waitIfBusy(void);
-    void _turnOnDisplay(void);
-    void _turnOnDisplayPart(void);
-    // void lut(uint8_t *lut);
-    // void setLut(uint8_t *lut);
-    void _setWindow(uint16_t Xstart, uint16_t Ystart, uint16_t Xend, uint16_t Yend);
-    void _setCursor(uint16_t Xstart, uint16_t Ystart);
 };
 
 #endif

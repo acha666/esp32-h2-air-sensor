@@ -1,8 +1,10 @@
 #include "main.h"
 #include "driver/gpio.h"
 #include "driver/spi_master.h"
+#include "esp_log.h"
 
 #include "e_paper.h"
+#include "epd1in54_ssd1681.h"
 
 spi_device_handle_t display_spi_device_handle;
 
@@ -346,13 +348,20 @@ extern "C" void vTaskDiplay(void *pvParameters)
     ESP_ERROR_CHECK(spi_bus_initialize(SPI2_HOST, &bus_config, SPI_DMA_CH_AUTO));
     ESP_ERROR_CHECK(spi_bus_add_device(SPI2_HOST, &dev_config, &display_spi_device_handle));
 
-    EPD1IN54 *screen = new EPD1IN54(GPIO_NUM_12, GPIO_NUM_4, GPIO_NUM_5, display_spi_device_handle);
+    EPD1IN54_SSD1681 *screen = new EPD1IN54_SSD1681(GPIO_NUM_12, GPIO_NUM_4, GPIO_NUM_5, display_spi_device_handle);
+
+    gpio_dump_io_configuration(stdout, (1ULL << 4) | (1ULL << 12));
 
     screen->init();
-    vTaskDelay(10 / portTICK_PERIOD_MS);
-    screen->clear();
-    vTaskDelay(10 / portTICK_PERIOD_MS);
-    screen->display(gImage_1);
+    ESP_LOGI("Display", "Init Done");
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    screen->clearDisplay();
+    ESP_LOGI("Display", "Clear Done");
+
+    vTaskDelay(100 / portTICK_PERIOD_MS);
+    screen->writeDisplayBuffer(gImage_1);
+
+    ESP_LOGI("Display", "Done");
 
     vTaskDelete(NULL);
 }
