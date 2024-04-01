@@ -1,0 +1,9 @@
+custom/
+lib/
+lvgl/
+lvgl-simulator/
+temp/
+CMakeLists.txt
+LICENSE.txt
+SCR.txt
+**/*.mk

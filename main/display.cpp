@@ -5,9 +5,12 @@
 #include "esp_timer.h"
 #include "string.h"
 
+#include "gui_guider.h"
 #include "lv_port_disp.h"
 
 void vTaskLvglTimer(void *pvParameters);
+
+lv_ui guider_ui;
 
 static void lvgl_tick_cb(void *arg)
 {
@@ -29,14 +32,7 @@ extern "C" void vTaskDisplayInit(void *pvParameters)
 
     xTaskCreate(vTaskLvglTimer, "vTaskLvglTimer", 4096, NULL, 1, NULL);
 
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    lv_obj_t *label = lv_label_create(lv_scr_act());
-    lv_obj_set_pos(label, 10, 10);
-    lv_label_set_text(label, "Hello World!");
-
-    vTaskDelay(pdMS_TO_TICKS(1000));
-    // disp_flush();
+    setup_ui(&guider_ui);
 
     vTaskDelete(NULL);
 }
