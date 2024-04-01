@@ -21,6 +21,7 @@ typedef struct
 	lv_obj_t *screen;
 	bool screen_del;
 	lv_obj_t *screen_label_1;
+	lv_obj_t *screen_label_2;
   int global_language;
 }lv_ui;
 
@@ -58,7 +59,9 @@ extern int global_language;
 
 void setup_scr_screen(lv_ui *ui);
 
+LV_FONT_DECLARE(lv_font_IosevkaTerm_Bold_16)
 LV_FONT_DECLARE(lv_font_montserratMedium_16)
+LV_FONT_DECLARE(lv_font_HarmonyOS_Sans_SC_Bold_24)
 
 
 #ifdef __cplusplus
