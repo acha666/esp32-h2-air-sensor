@@ -56,71 +56,23 @@ void EPD1IN54_SSD1681::clearDisplay()
 void EPD1IN54_SSD1681::writeDisplayBuffer(uint8_t *Image)
 {
     uint16_t Width, Height;
-    // Width = (_displayWidth % 8 == 0) ? (_displayWidth / 8) : (_displayWidth / 8 + 1);
-    // Height = _displayHeight;
+    Width = (_displayWidth % 8 == 0) ? (_displayWidth / 8) : (_displayWidth / 8 + 1);
+    Height = _displayHeight;
+    uint32_t Addr = 0;
 
-    uint64_t Addr = 0;
-    // _sendCommand(0x24);
+    _sendCommandReg(_register::WRITE_RAM);
     // for (uint16_t j = 0; j < Height; j++)
     // {
     //     for (uint16_t i = 0; i < Width; i++)
     //     {
-    //         Addr = i + j * Width;
     //         _sendData(Image[Addr]);
+    //         Addr++;
     //     }
     // }
-
-    Width = 200;
-    Height = 25;
-    _sendCommandReg(_register::WRITE_RAM);
-    for (uint16_t j = 0; j < Height; j++)
-    {
-        for (uint16_t i = 0; i < Width; i++)
-        {
-            _sendData(Image[Addr]);
-            Addr++;
-        }
-    }
-
+    _sendData(Image, Width * Height);
     _turnOnDisplay();
 }
 
-void EPD1IN54_SSD1681::writeDisplayBuffer(uint8_t *image_buffer, int x, int y, int image_width, int image_height)
-{
-    int x_end;
-    int y_end;
-
-    if (image_buffer == NULL )
-        throw std::invalid_argument("image_buffer is NULL");
-    
-    if(x < 0 || image_width < 0 || y < 0 || image_height < 0)
-        throw std::invalid_argument("x, y, image_width, image_height must be positive");
-    
-    x &= 0xF8;
-    image_width &= 0xF8;
-
-    if (x + image_width >= this->_displayWidth)
-        x_end = this->_displayWidth - 1;
-    else
-        x_end = x + image_width - 1;
-
-    if (y + image_height >= this->_displayHeight)
-        y_end = this->_displayHeight - 1;
-    else
-        y_end = y + image_height - 1;
-
-    _setWindow(x, y, x_end, y_end);
-    _setCursor(x, y);
-    _sendCommandReg(_register::WRITE_RAM);
-
-    for (int j = 0; j < y_end - y + 1; j++)
-    {
-        for (int i = 0; i < (x_end - x + 1) / 8; i++)
-        {
-            _sendData(image_buffer[i + j * (image_width / 8)]);
-        }
-    }
-}
 
 void EPD1IN54_SSD1681::sleep(void)
 {

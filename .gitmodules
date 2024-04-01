@@ -1,3 +1,0 @@
-[submodule "components/bme680/repo"]
-	path = components/bme680/repo
-	url = https://github.com/boschsensortec/BME68x_SensorDriver.git

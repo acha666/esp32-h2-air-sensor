@@ -1,5 +1,11 @@
 menu "Project Configuration"
 
+menu "LVGL Configuration"
+    config LVGL_TICK_PERIOD
+        int "LVGL tick period (ms)"
+        default 10
+    endmenu
+
 choice
     prompt "Select the temperature sensor to use"
     default PRJ_TEMP_SENSOR_SHT4x

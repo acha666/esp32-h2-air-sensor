@@ -87,11 +87,11 @@ void I2CScanTask(int i2c_gpio_sda, int i2c_gpio_scl)
     // vTaskDelete(NULL);
 }
 
-void vTaskDiplay(void *pvParameters);
+void vTaskDisplayInit(void *pvParameters);
 
 void app_main(void)
 {
-    xTaskCreate(vTaskDiplay, "Display_Task", 4096, NULL, 5, NULL);
+    xTaskCreate(vTaskDisplayInit, "Display_Task", 4096, NULL, 5, NULL);
 
     // I2CScanTask(26,27);
     // I2CScanTask(2,3);

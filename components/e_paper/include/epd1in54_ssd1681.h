@@ -13,7 +13,6 @@ public:
     void init() override;
     void clearDisplay() override;
     void writeDisplayBuffer(uint8_t *Image);
-    void writeDisplayBuffer(uint8_t *image_buffer, int x, int y, int image_width, int image_height);
     void sleep() override;
 
 private:
