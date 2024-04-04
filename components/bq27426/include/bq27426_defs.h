@@ -2,6 +2,9 @@
 #define __BQ27426_DEFS_H__
 
 #include "esp_types.h"
+#include "optional"
+
+using std::optional;
 
 namespace BQ27426_DEFS
 {
@@ -26,9 +29,9 @@ namespace BQ27426_DEFS
         BQ27426_COMMAND_SOC = 0x1C,            // StateOfCharge()
         BQ27426_COMMAND_INT_TEMP = 0x1E,       // InternalTemperature()
         BQ27426_COMMAND_SOH = 0x20,            // StateOfHealth()
-        BQ27426_COMMAND_REM_CAP_UNFL = 0x28,   // RemainingCapacityUnfiltered()
+        BQ27426_COMMAND_REM_CAP_UNFIL = 0x28,  // RemainingCapacityUnfiltered()
         BQ27426_COMMAND_REM_CAP_FIL = 0x2A,    // RemainingCapacityFiltered()
-        BQ27426_COMMAND_FULL_CAP_UNFL = 0x2C,  // FullChargeCapacityUnfiltered()
+        BQ27426_COMMAND_FULL_CAP_UNFIL = 0x2C, // FullChargeCapacityUnfiltered()
         BQ27426_COMMAND_FULL_CAP_FIL = 0x2E,   // FullChargeCapacityFiltered()
         BQ27426_COMMAND_SOC_UNFL = 0x30,       // StateOfChargeUnfiltered()
     } STANDARD_COMMANDS;
@@ -56,47 +59,85 @@ namespace BQ27426_DEFS
         SOFT_RESET = 0x0042,
     } CONTROL_SUBCOMMANDS;
 
-///////////////////////////////////////////
-// Control Status Word - Bit Definitions //
-///////////////////////////////////////////
-// Bit positions for the 16-bit data of CONTROL_STATUS.
-// CONTROL_STATUS instructs the fuel gauge to return status information to
-// Control() addresses 0x00 and 0x01. The read-only status word contains status
-// bits that are set or cleared either automatically as conditions warrant or
-// through using specified subcommands.
-#define BQ27426_STATUS_SHUTDOWNEN (1 << 15)
-#define BQ27426_STATUS_WDRESET (1 << 14)
-#define BQ27426_STATUS_SS (1 << 13)
-#define BQ27426_STATUS_CALMODE (1 << 12)
-#define BQ27426_STATUS_CCA (1 << 11)
-#define BQ27426_STATUS_BCA (1 << 10)
-#define BQ27426_STATUS_QMAX_UP (1 << 9)
-#define BQ27426_STATUS_RES_UP (1 << 8)
-#define BQ27426_STATUS_INITCOMP (1 << 7)
-#define BQ27426_STATUS_SLEEP (1 << 4)
-#define BQ27426_STATUS_LDMD (1 << 3)
-#define BQ27426_STATUS_RUP_DIS (1 << 2)
-#define BQ27426_STATUS_VOK (1 << 1)
-#define BQ27426_STATUS_CHEM_CHANGE (1 << 0)
+    struct CONTROL_STATUS
+    {
+        bool SHUTDOWNEN;
+        bool WDRESET;
+        bool SS;
+        bool CALMODE;
+        bool CCA;
+        bool BCA;
+        bool QMAX_UP;
+        bool RES_UP;
+        bool INITCOMP;
+        bool SLEEP;
+        bool LDMD;
+        bool RUP_DIS;
+        bool VOK;
+        bool CHEM_CHANGE;
+        uint16_t raw;
 
-////////////////////////////////////
-// Flag Command - Bit Definitions //
-////////////////////////////////////
-// Bit positions for the 16-bit data of Flags()
-// This read-word function returns the contents of the fuel gauging status
-// register, depicting the current operating status.
-#define BQ27426_FLAG_OT (1 << 15)
-#define BQ27426_FLAG_UT (1 << 14)
-#define BQ27426_FLAG_FC (1 << 9)
-#define BQ27426_FLAG_CHG (1 << 8)
-#define BQ27426_FLAG_OCVTAKEN (1 << 7)
-#define BQ27426_FLAG_DOD_CORRECT (1 << 6)
-#define BQ27426_FLAG_ITPOR (1 << 5)
-#define BQ27426_FLAG_CFGUPMODE (1 << 4)
-#define BQ27426_FLAG_BAT_DET (1 << 3)
-#define BQ27426_FLAG_SOC1 (1 << 2)
-#define BQ27426_FLAG_SOCF (1 << 1)
-#define BQ27426_FLAG_DSG (1 << 0)
+        // read only, no setters
+
+        static CONTROL_STATUS from_value(uint16_t value)
+        {
+            CONTROL_STATUS reg;
+            reg.raw = value;
+            reg.SHUTDOWNEN = (value >> 15) & 1;
+            reg.WDRESET = (value >> 14) & 1;
+            reg.SS = (value >> 13) & 1;
+            reg.CALMODE = (value >> 12) & 1;
+            reg.CCA = (value >> 11) & 1;
+            reg.BCA = (value >> 10) & 1;
+            reg.QMAX_UP = (value >> 9) & 1;
+            reg.RES_UP = (value >> 8) & 1;
+            reg.INITCOMP = (value >> 7) & 1;
+            reg.SLEEP = (value >> 4) & 1;
+            reg.LDMD = (value >> 3) & 1;
+            reg.RUP_DIS = (value >> 2) & 1;
+            reg.VOK = (value >> 1) & 1;
+            reg.CHEM_CHANGE = value & 1;
+            return reg;
+        }
+    };
+
+    struct FLAGS
+    {
+        bool OT;
+        bool UT;
+        bool FC;
+        bool CHG;
+        bool OCVTAKEN;
+        bool DOD_CORRECT;
+        bool ITPOR;
+        bool CFGUPMODE;
+        bool BAT_DET;
+        bool SOC1;
+        bool SOCF;
+        bool DSG;
+        uint16_t raw;
+
+        // read only, no setters
+
+        static FLAGS from_value(uint16_t value)
+        {
+            FLAGS reg;
+            reg.raw = value;
+            reg.OT = (value >> 15) & 1;
+            reg.UT = (value >> 14) & 1;
+            reg.FC = (value >> 9) & 1;
+            reg.CHG = (value >> 8) & 1;
+            reg.OCVTAKEN = (value >> 7) & 1;
+            reg.DOD_CORRECT = (value >> 6) & 1;
+            reg.ITPOR = (value >> 5) & 1;
+            reg.CFGUPMODE = (value >> 4) & 1;
+            reg.BAT_DET = (value >> 3) & 1;
+            reg.SOC1 = (value >> 2) & 1;
+            reg.SOCF = (value >> 1) & 1;
+            reg.DSG = value & 1;
+            return reg;
+        }
+    };
 
 ////////////////////////////
 // Extended Data Commands //

@@ -1,32 +1,64 @@
 #include "esp_log.h"
 #include "driver/i2c_master.h"
-#include "main.h"
+#include <stdexcept>
+
 #include "bq27426.h"
+#include "bq27426_defs.h"
 #include "bq2562x.h"
 #include "bq2562x_defs.h"
-#include <iostream>
+
+#include "main.h"
 
 static void power_i2c_init(void);
 
-static const char *TAG = "Power";
+static constexpr char TAG[] = "Power";
 static i2c_master_bus_handle_t power_i2c_master_bus_handle;
+static bool CHARGER_FAULT_FLAG = false;
+static bool GAUGE_FAULT_FLAG = false;
 
 BQ27426 *BatteryGauge;
 BQ2562x *Charger;
 
+using std::runtime_error;
+
 extern "C" void PowerTask(void *pvParameters)
 {
     power_i2c_init();
-    assert(xSemaphoreTake(xI2CSemaphore, 5000 / portTICK_PERIOD_MS) == pdTRUE);
-    Charger = new BQ2562x(power_i2c_master_bus_handle, 0x6a);
-    BatteryGauge = new BQ27426(power_i2c_master_bus_handle);
 
-    uint32_t val = Charger->getChargeCurrent();
-    ESP_LOGI(TAG, "Charge Current: %ld mA", val);
+    try
+    {
+        Charger = new BQ2562x(power_i2c_master_bus_handle, 0x6a);
+    }
+    catch (const runtime_error &e)
+    {
+        CHARGER_FAULT_FLAG = true;
+        ESP_LOGE(TAG, "Charger init failed: %s", e.what());
+    }
 
-    Charger->resetRegister();
+    try
+    {
+        BatteryGauge = new BQ27426(power_i2c_master_bus_handle);
+    }
+    catch (const runtime_error &e)
+    {
+        GAUGE_FAULT_FLAG = true;
+        ESP_LOGE(TAG, "Battery Gauge init failed: %s", e.what());
+    }
 
-    xSemaphoreGive(xI2CSemaphore);
+    if (!CHARGER_FAULT_FLAG && !GAUGE_FAULT_FLAG) // for testing
+    {
+        uint32_t val = Charger->getChargeCurrent();
+        ESP_LOGI(TAG, "Charge Current: %ld mA", val);
+
+        ESP_LOGI(TAG, "Bat Temp: %d", BatteryGauge->getTemperature());
+        ESP_LOGI(TAG, "Bat Voltage: %d", BatteryGauge->getVoltage());
+    }
+
+    if (!CHARGER_FAULT_FLAG && !GAUGE_FAULT_FLAG)
+    {
+        // init charger and gauge(set some values)
+    }
+
     vTaskDelete(NULL);
 }
 
@@ -46,7 +78,7 @@ static void power_i2c_init(void)
     return;
 }
 
-static void print_charger_control(BQ2562X_DEFS::CHARGER_CONTROL_REG chargerControl)
+static void print_charger_charger_control(BQ2562X_DEFS::CHARGER_CONTROL_REG chargerControl)
 {
     printf("EN_AUTO_IBATDIS = 0x%02x\n", chargerControl.EN_AUTO_IBATDIS.value());
     printf("FORCE_IBATDIS = 0x%02x\n", chargerControl.FORCE_IBATDIS.value());
@@ -70,31 +102,36 @@ static void print_charger_control(BQ2562X_DEFS::CHARGER_CONTROL_REG chargerContr
     printf("CHG_RATE = 0x%02x\n", chargerControl.CHG_RATE.value());
 }
 
-extern "C" void BQScanTask()
+static void print_gauge_control_status(BQ27426_DEFS::CONTROL_STATUS controlStatus)
 {
-    i2c_master_bus_handle_t tool_bus_handle;
-    i2c_port_t i2c_port = I2C_NUM_0;
+    printf("SHUTDOWNEN = 0x%02x\n", controlStatus.SHUTDOWNEN);
+    printf("WDRESET = 0x%02x\n", controlStatus.WDRESET);
+    printf("SS = 0x%02x\n", controlStatus.SS);
+    printf("CALMODE = 0x%02x\n", controlStatus.CALMODE);
+    printf("CCA = 0x%02x\n", controlStatus.CCA);
+    printf("BCA = 0x%02x\n", controlStatus.BCA);
+    printf("QMAX_UP = 0x%02x\n", controlStatus.QMAX_UP);
+    printf("RES_UP = 0x%02x\n", controlStatus.RES_UP);
+    printf("INITCOMP = 0x%02x\n", controlStatus.INITCOMP);
+    printf("SLEEP = 0x%02x\n", controlStatus.SLEEP);
+    printf("LDMD = 0x%02x\n", controlStatus.LDMD);
+    printf("RUP_DIS = 0x%02x\n", controlStatus.RUP_DIS);
+    printf("VOK = 0x%02x\n", controlStatus.VOK);
+    printf("CHEM_CHANGE = 0x%02x\n", controlStatus.CHEM_CHANGE);
+}
 
-    i2c_master_bus_config_t i2c_bus_config = {
-        .i2c_port = i2c_port,
-        .sda_io_num = GPIO_NUM_2,
-        .scl_io_num = GPIO_NUM_3,
-        .clk_source = I2C_CLK_SRC_DEFAULT,
-        .glitch_ignore_cnt = 7,
-        // .flags.enable_internal_pullup = true,
-    };
-
-    ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_bus_config, &tool_bus_handle) != ESP_OK);
-
-    esp_err_t ret = i2c_master_probe(tool_bus_handle, 0x55, 50);
-    if (ret == ESP_OK)
-    {
-        ESP_LOGI(TAG, "BQ27441 detected");
-    }
-    else
-    {
-        ESP_LOGE(TAG, "BQ27441 not detected");
-    }
-
-    ESP_ERROR_CHECK(i2c_del_master_bus(tool_bus_handle));
+static void print_gauge_flags(BQ27426_DEFS::FLAGS flags)
+{
+    printf("OT = 0x%02x\n", flags.OT);
+    printf("UT = 0x%02x\n", flags.UT);
+    printf("FC = 0x%02x\n", flags.FC);
+    printf("CHG = 0x%02x\n", flags.CHG);
+    printf("OCVTAKEN = 0x%02x\n", flags.OCVTAKEN);
+    printf("DOD_CORRECT = 0x%02x\n", flags.DOD_CORRECT);
+    printf("ITPOR = 0x%02x\n", flags.ITPOR);
+    printf("CFGUPMODE = 0x%02x\n", flags.CFGUPMODE);
+    printf("BAT_DET = 0x%02x\n", flags.BAT_DET);
+    printf("SOC1 = 0x%02x\n", flags.SOC1);
+    printf("SOCF = 0x%02x\n", flags.SOCF);
+    printf("DSG = 0x%02x\n", flags.DSG);
 }

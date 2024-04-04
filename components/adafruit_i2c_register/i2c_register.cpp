@@ -6,7 +6,7 @@
 
 #include <i2c_register.h>
 #include <string.h>
-#include <iostream>
+#include <stdexcept>
 
 using std::runtime_error;
 

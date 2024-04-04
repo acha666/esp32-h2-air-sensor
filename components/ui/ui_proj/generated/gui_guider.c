@@ -144,11 +144,13 @@ void init_scr_del_flag(lv_ui *ui)
 {
   
 	ui->screen_del = true;
+	ui->sensor_debug_del = true;
+	ui->power_debug_del = true;
 }
 
 void setup_ui(lv_ui *ui)
 {
 	init_scr_del_flag(ui);
-	setup_scr_screen(ui);
-	lv_scr_load(ui->screen);
+	setup_scr_sensor_debug(ui);
+	lv_scr_load(ui->sensor_debug);
 }

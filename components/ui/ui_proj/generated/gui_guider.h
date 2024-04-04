@@ -22,6 +22,13 @@ typedef struct
 	bool screen_del;
 	lv_obj_t *screen_label_1;
 	lv_obj_t *screen_label_2;
+	lv_obj_t *screen_label_3;
+	lv_obj_t *sensor_debug;
+	bool sensor_debug_del;
+	lv_obj_t *sensor_debug_text;
+	lv_obj_t *power_debug;
+	bool power_debug_del;
+	lv_obj_t *power_debug_text;
   int global_language;
 }lv_ui;
 
@@ -58,6 +65,8 @@ extern int global_language;
 
 
 void setup_scr_screen(lv_ui *ui);
+void setup_scr_sensor_debug(lv_ui *ui);
+void setup_scr_power_debug(lv_ui *ui);
 
 LV_FONT_DECLARE(lv_font_IosevkaTerm_Bold_16)
 LV_FONT_DECLARE(lv_font_montserratMedium_16)

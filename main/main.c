@@ -12,7 +12,6 @@
 
 QueueHandle_t sensorDataQueue;
 TaskHandle_t tempSensorTaskHandle = NULL;
-SemaphoreHandle_t xI2CSemaphore = NULL;
 
 static const char *TAG = "Main";
 
@@ -91,12 +90,14 @@ void vTaskDisplayInit(void *pvParameters);
 
 void app_main(void)
 {
-    xTaskCreate(vTaskDisplayInit, "Display_Task", 4096, NULL, 5, NULL);
+    I2CScanTask(2,3);
+    xTaskCreate(PowerTask, "Power_Task", 4096, NULL, 5, NULL);
+
+    // xTaskCreate(SensorInitTask, "Temp_Sensor_Init_Task", 4096, NULL, 5, NULL);
+    // vTaskDelay(3000 / portTICK_PERIOD_MS);
+    // xTaskCreate(vTaskDisplayInit, "Display_Task", 4096, NULL, 5, NULL);
 
     // I2CScanTask(26,27);
-    // I2CScanTask(2,3);
-    // xI2CSemaphore = xSemaphoreCreateMutex();
-    // xTaskCreate(PowerTask, "Power_Task", 4096, NULL, 5, NULL);
 
     // sensorDataQueue = xQueueCreate(10, sizeof(sensorData_t));
     // assert(sensorDataQueue != NULL);
@@ -111,5 +112,4 @@ void app_main(void)
     // /* hardware related and device init */
 
     // xTaskCreate(ZigbeeTask, "Zigbee_Task", 4096, NULL, 5, NULL);
-    // xTaskCreate(SensorInitTask, "Temp_Sensor_Init_Task", 4096, NULL, 5, NULL);
 }

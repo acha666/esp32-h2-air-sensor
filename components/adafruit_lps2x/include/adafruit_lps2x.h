@@ -157,6 +157,7 @@ public:
                           bool pres_high = false, bool pres_low = false,
                           bool fifo_full = false, bool fifo_watermark = false,
                           bool fifo_overflow = false);
+  uint8_t getChipID(void);
 
 protected:
   esp_err_t _init(int32_t sensor_id);

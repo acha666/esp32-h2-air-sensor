@@ -56,7 +56,7 @@ BQ2562x::BQ2562x(i2c_master_bus_handle_t bus_handle, uint8_t address)
     i2c_device_config_t dev_cfg = {
         .dev_addr_length = I2C_ADDR_BIT_LEN_7,
         .device_address = address,
-        .scl_speed_hz = 100000,
+        .scl_speed_hz = 100 * 1000,
     };
 
     ret = i2c_master_bus_add_device(_i2cBus, &dev_cfg, &_i2cDevice);

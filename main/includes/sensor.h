@@ -2,17 +2,20 @@
 #define SENSOR_H
 
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 
-typedef struct {
-    float temperature;
-    float humidity;
-    float pressure;
-} sensorData_t;
+    typedef struct
+    {
+        float temperature;
+        float humidity;
+        float pressure;
+        uint32_t timestamp;
+    } sensorData_t;
 
-void SensorInitTask(void *pvParameters);
-void SensorTask(void *pvParameters);
+    void SensorInitTask(void *pvParameters);
+    void SensorTask(void *pvParameters);
 
 #ifdef __cplusplus
 }

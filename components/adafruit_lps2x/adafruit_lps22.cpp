@@ -21,7 +21,6 @@ Adafruit_LPS22::~Adafruit_LPS22(void)
     delete ctrl3_reg;
   if (threshp_reg)
     delete threshp_reg;
-
 }
 
 /*!  @brief Initializer for post i2c/spi init
@@ -122,4 +121,15 @@ void Adafruit_LPS22::configureInterrupt(bool activelow, bool opendrain,
                 (fifo_watermark << 4) | (fifo_overflow << 3) |
                 (data_ready << 2) | (pres_low << 1) | (pres_high);
   ctrl3_reg->write(reg);
+}
+
+uint8_t Adafruit_LPS22::getChipID(void)
+{
+  I2C_Register chip_id = I2C_Register(
+      i2c_dev, (uint8_t)LPS2X_WHOAMI, 1);
+
+  // make sure we're talking to the right chip
+  uint8_t id;
+  ESP_ERROR_CHECK(chip_id.read(&id));
+  return id;
 }

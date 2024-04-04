@@ -84,6 +84,11 @@ void lv_port_disp_init(void)
     lv_disp_drv_register(&disp_drv);
 }
 
+// void display_refresh(void)
+// {
+//     ESP_ERROR_CHECK(epaper_panel_refresh_screen(panel_handle));
+// }
+
 static void disp_init(void)
 {
     spi_bus_config_t bus_config = {

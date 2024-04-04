@@ -42,6 +42,8 @@ void disp_enable_update(void);
  */
 void disp_disable_update(void);
 
+// void display_refresh(void);
+
 
 /**********************
  *      MACROS
