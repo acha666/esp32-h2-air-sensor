@@ -3,8 +3,8 @@ dependencies:
   espressif/esp_lcd_ssd1681: "^0.1.0"
   lvgl/lvgl: "^8.4.0"
   espressif/led_strip: "^2.5.3"
-  espressif/esp-zboss-lib: "^1.1.2"
-  espressif/esp-zigbee-lib: "^1.1.2"
+  espressif/esp-zboss-lib: "^1.2.2"
+  espressif/esp-zigbee-lib: "^1.2.2"
   ## Required IDF version
   idf:
     version: ">=5.0.0"

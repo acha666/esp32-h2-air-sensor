@@ -18,11 +18,14 @@ extern "C" {
 typedef struct
 {
   
-	lv_obj_t *screen;
-	bool screen_del;
-	lv_obj_t *screen_label_1;
-	lv_obj_t *screen_label_2;
-	lv_obj_t *screen_label_3;
+	lv_obj_t *main;
+	bool main_del;
+	lv_obj_t *main_label_6;
+	lv_obj_t *main_label_5;
+	lv_obj_t *main_label_4;
+	lv_obj_t *main_label_3;
+	lv_obj_t *main_label_2;
+	lv_obj_t *main_label_1;
 	lv_obj_t *sensor_debug;
 	bool sensor_debug_del;
 	lv_obj_t *sensor_debug_text;
@@ -64,13 +67,12 @@ extern lv_ui guider_ui;
 extern int global_language;
 
 
-void setup_scr_screen(lv_ui *ui);
+void setup_scr_main(lv_ui *ui);
 void setup_scr_sensor_debug(lv_ui *ui);
 void setup_scr_power_debug(lv_ui *ui);
 
 LV_FONT_DECLARE(lv_font_IosevkaTerm_Bold_16)
 LV_FONT_DECLARE(lv_font_montserratMedium_16)
-LV_FONT_DECLARE(lv_font_HarmonyOS_Sans_SC_Bold_24)
 
 
 #ifdef __cplusplus

@@ -143,7 +143,7 @@ void ui_img_rotate_animation(void * var, int32_t duration, int32_t delay, lv_coo
 void init_scr_del_flag(lv_ui *ui)
 {
   
-	ui->screen_del = true;
+	ui->main_del = true;
 	ui->sensor_debug_del = true;
 	ui->power_debug_del = true;
 }
@@ -151,6 +151,6 @@ void init_scr_del_flag(lv_ui *ui)
 void setup_ui(lv_ui *ui)
 {
 	init_scr_del_flag(ui);
-	setup_scr_sensor_debug(ui);
-	lv_scr_load(ui->sensor_debug);
+	setup_scr_main(ui);
+	lv_scr_load(ui->main);
 }

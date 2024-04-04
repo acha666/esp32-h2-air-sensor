@@ -1,6 +1,7 @@
 #include "nvs_flash.h"
 #include "esp_check.h"
 #include "esp_log.h"
+#include "esp_timer.h"
 #include "esp_zigbee_core.h"
 #include "driver/gpio.h"
 #include "driver/i2c_master.h"
@@ -9,37 +10,73 @@
 #include "sensor.h"
 #include "power.h"
 #include "zigbee.h"
+#include "display.h"
 
 QueueHandle_t sensorDataQueue;
+QueueHandle_t powerDataQueue;
+QueueHandle_t displayMainDataQueue;
 TaskHandle_t tempSensorTaskHandle = NULL;
+TaskHandle_t powerTaskHandle = NULL;
 
 static const char *TAG = "Main";
 
-void MainTask(void *pvParameters)
+void main_task(void *pvParameters)
 {
-    static sensorData_t data;
+    sensor_data_t sensor_data;
+    power_data_t power_data;
     while (1)
     {
+        display_main_data_t display_main_data;
         xQueueReset(sensorDataQueue);
+        xQueueReset(powerDataQueue);
         xTaskNotifyGive(tempSensorTaskHandle);
+        xTaskNotifyGive(powerTaskHandle);
 
-        if (xQueueReceive(sensorDataQueue, &data, pdMS_TO_TICKS(5000)) == pdPASS)
+        if (xQueueReceive(sensorDataQueue, &sensor_data, pdMS_TO_TICKS(5000)) == pdPASS)
         {
-            ESP_LOGI(TAG, "Hum: %.2f Tmp: %.2f Pre: %.2f", data.humidity, data.temperature, data.pressure);
+            ESP_LOGI(TAG, "Hum: %.2f Tmp: %.2f Pre: %.2f", sensor_data.humidity, sensor_data.temperature, sensor_data.pressure);
 
-            app_zb_report_temperature(data.temperature);
-            app_zb_report_humidity(data.humidity);
-            app_zb_report_pressure(data.pressure);
+            display_main_data.humidity = sensor_data.humidity;
+            display_main_data.temperature = sensor_data.temperature;
+            display_main_data.pressure = sensor_data.pressure;
+
+            app_zb_report_temperature(sensor_data.temperature);
+            app_zb_report_humidity(sensor_data.humidity);
+            app_zb_report_pressure(sensor_data.pressure);
         }
         else
-        {
             ESP_LOGE(TAG, "No data from sensor");
+
+        if (xQueueReceive(powerDataQueue, &power_data, pdMS_TO_TICKS(5000)) == pdPASS)
+        {
+            if (power_data.gauge_fault)
+                display_main_data.battery_state = 0;
+
+            display_main_data.battery_soc = power_data.gauge_battery_soc;
+            display_main_data.battery_voltage = power_data.gauge_battery_voltage;
+            if (power_data.gauge_fc)
+                display_main_data.battery_state = 3;
+            else if (power_data.gauge_battery_soc < 20)
+                display_main_data.battery_state = 1;
+            else
+                display_main_data.battery_state = 2;
+
+            if (power_data.charger_charging)
+                display_main_data.battery_charging_state = 1;
+            else
+                display_main_data.battery_charging_state = 0;
         }
-        vTaskDelay(10000 / portTICK_PERIOD_MS);
+        else
+            ESP_LOGE(TAG, "No data from power");
+
+        display_main_data.timestamp = esp_timer_get_time() / 1000;
+        xQueueSend(displayMainDataQueue, &display_main_data, 0);
+
+        vTaskDelay(60 * 1000 / portTICK_PERIOD_MS);
     }
 }
 
-void I2CScanTask(int i2c_gpio_sda, int i2c_gpio_scl)
+void i2c_scan_task(int i2c_gpio_sda, int i2c_gpio_scl)
 {
     i2c_master_bus_handle_t tool_bus_handle;
     i2c_port_t i2c_port = I2C_NUM_0;
@@ -86,30 +123,28 @@ void I2CScanTask(int i2c_gpio_sda, int i2c_gpio_scl)
     // vTaskDelete(NULL);
 }
 
-void vTaskDisplayInit(void *pvParameters);
-
 void app_main(void)
 {
-    I2CScanTask(2,3);
-    xTaskCreate(PowerTask, "Power_Task", 4096, NULL, 5, NULL);
+    i2c_scan_task(2, 3);
+    i2c_scan_task(26, 27);
 
-    // xTaskCreate(SensorInitTask, "Temp_Sensor_Init_Task", 4096, NULL, 5, NULL);
-    // vTaskDelay(3000 / portTICK_PERIOD_MS);
-    // xTaskCreate(vTaskDisplayInit, "Display_Task", 4096, NULL, 5, NULL);
+    sensorDataQueue = xQueueCreate(3, sizeof(sensor_data_t));
+    powerDataQueue = xQueueCreate(3, sizeof(power_data_t));
+    displayMainDataQueue = xQueueCreate(3, sizeof(display_main_data_t));
+    assert(sensorDataQueue != NULL && powerDataQueue != NULL && displayMainDataQueue != NULL);
 
-    // I2CScanTask(26,27);
+    xTaskCreate(sensor_init_task, "Temp_Sensor_Init_Task", 4096, NULL, 5, NULL);
+    xTaskCreate(display_init_task, "Display_Task", 4096, NULL, 5, NULL);
+    xTaskCreate(power_task, "Power_Task", 4096, NULL, 5, &powerTaskHandle);
 
-    // sensorDataQueue = xQueueCreate(10, sizeof(sensorData_t));
-    // assert(sensorDataQueue != NULL);
+    esp_zb_platform_config_t config = {
+        .radio_config = ESP_ZB_DEFAULT_RADIO_CONFIG(),
+        .host_config = ESP_ZB_DEFAULT_HOST_CONFIG(),
+    };
+    ESP_ERROR_CHECK(nvs_flash_init());
+    /* load Zigbee light_bulb platform config to initialization */
+    ESP_ERROR_CHECK(esp_zb_platform_config(&config));
+    /* hardware related and device init */
 
-    // esp_zb_platform_config_t config = {
-    //     .radio_config = ESP_ZB_DEFAULT_RADIO_CONFIG(),
-    //     .host_config = ESP_ZB_DEFAULT_HOST_CONFIG(),
-    // };
-    // ESP_ERROR_CHECK(nvs_flash_init());
-    // /* load Zigbee light_bulb platform config to initialization */
-    // ESP_ERROR_CHECK(esp_zb_platform_config(&config));
-    // /* hardware related and device init */
-
-    // xTaskCreate(ZigbeeTask, "Zigbee_Task", 4096, NULL, 5, NULL);
+    xTaskCreate(ZigbeeTask, "Zigbee_Task", 4096, NULL, 5, NULL);
 }

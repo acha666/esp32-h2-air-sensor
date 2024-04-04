@@ -100,7 +100,7 @@
       "type": "shell",
       "command": "${config:idf.pythonBinPath} ${config:idf.espIdfPath}/tools/idf.py -p ${config:idf.port} -b ${config:idf.flashBaudRate} flash",
       "windows": {
-        "command": "${config:idf.pythonBinPathWin} ${config:idf.espIdfPathWin}\\tools\\idf.py flash -p ${config:idf.portWin} -b ${config:idf.flashBaudRate}",
+        "command": "${config:idf.pythonBinPathWin} ${config:idf.espIdfPathWin}\\tools\\idf.py erase-flash flash -p ${config:idf.portWin} -b ${config:idf.flashBaudRate}",
         "options": {
           "env": {
             "PATH": "${env:PATH};${config:idf.customExtraPaths}"

@@ -8,8 +8,10 @@
 #include "bq2562x_defs.h"
 
 #include "main.h"
+#include "power.h"
 
 static void power_i2c_init(void);
+static void charger_watchdog_feed_task(void *pvParameters);
 
 static constexpr char TAG[] = "Power";
 static i2c_master_bus_handle_t power_i2c_master_bus_handle;
@@ -21,11 +23,12 @@ BQ2562x *Charger;
 
 using std::runtime_error;
 
-extern "C" void PowerTask(void *pvParameters)
+extern "C" void power_task(void *pvParameters)
 {
+    // Initialize I2C Bus
     power_i2c_init();
 
-    try
+    try // Initialize Charger
     {
         Charger = new BQ2562x(power_i2c_master_bus_handle, 0x6a);
     }
@@ -35,7 +38,7 @@ extern "C" void PowerTask(void *pvParameters)
         ESP_LOGE(TAG, "Charger init failed: %s", e.what());
     }
 
-    try
+    try // Initialize Battery Gauge
     {
         BatteryGauge = new BQ27426(power_i2c_master_bus_handle);
     }
@@ -45,21 +48,80 @@ extern "C" void PowerTask(void *pvParameters)
         ESP_LOGE(TAG, "Battery Gauge init failed: %s", e.what());
     }
 
-    if (!CHARGER_FAULT_FLAG && !GAUGE_FAULT_FLAG) // for testing
-    {
-        uint32_t val = Charger->getChargeCurrent();
-        ESP_LOGI(TAG, "Charge Current: %ld mA", val);
-
-        ESP_LOGI(TAG, "Bat Temp: %d", BatteryGauge->getTemperature());
-        ESP_LOGI(TAG, "Bat Voltage: %d", BatteryGauge->getVoltage());
-    }
-
     if (!CHARGER_FAULT_FLAG && !GAUGE_FAULT_FLAG)
     {
-        // init charger and gauge(set some values)
+        BQ2562X_DEFS::CHARGER_CONTROL_REG charger_control;
+        charger_control.REG_RST = 1; // reset charger
+        Charger->setChargerControl(charger_control);
+
+        charger_control= BQ2562X_DEFS::CHARGER_CONTROL_REG();
+        charger_control.WATCHDOG = BQ2562X_DEFS::CHARGER_CONTROL_REG::WATCH_DOG_100S; // set watchdog to 100s
+        Charger->setChargerControl(charger_control);
+
+        Charger->setChargeCurrent(2000); // set charge current to 2000mA
+
+        BQ2562X_DEFS::NTC_CONTROL_REG ntc_control;
+        ntc_control.TS_IGNORE = 1; // ignore NTC
+        Charger->setNTCControl(ntc_control);
+
+        xTaskCreate(charger_watchdog_feed_task, "charger_watchdog_feed_task", 4096, NULL, 1, NULL);
+    }
+
+    while (1) // Main loop
+    {
+        ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
+        power_data_t data;
+        if (!CHARGER_FAULT_FLAG)
+        {
+            data.charger_fault = 0;
+
+            BQ2562X_DEFS::CHARGER_STATUS_REG chargerStatus = Charger->getChargerStatus();
+            if (chargerStatus.CHG_STAT.value() == BQ2562X_DEFS::CHARGER_STATUS_REG::CHG_STAT_NOT_CHARGING)
+                data.charger_charging = false;
+            else
+                data.charger_charging = true;
+        }
+        else
+            data.charger_fault = 1;
+
+        if (!GAUGE_FAULT_FLAG)
+        {
+            data.gauge_fault = 0;
+            data.gauge_battery_soc = BatteryGauge->getStateOfCharge();
+            data.gauge_battery_soh = BatteryGauge->getStateOfHealth();
+            data.gauge_battery_voltage = BatteryGauge->getVoltage();
+            data.gauge_temperature = BatteryGauge->getTemperature();
+            data.gauge_average_current = BatteryGauge->getAverageCurrent();
+            data.gauge_average_power = BatteryGauge->getAveragePower();
+            data.gauge_remaining_capacity = BatteryGauge->getRemainingCapacity();
+            data.gauge_full_charge_capacity = BatteryGauge->getFullChargeCapacity();
+
+            BQ27426_DEFS::FLAGS flags = BatteryGauge->getFlags();
+            data.gauge_chg = flags.CHG;
+            data.gauge_fc = flags.FC;
+            if (flags.OT)
+                data.gauge_temperature_state = power_data_t::OVER_TEMP;
+            else if (flags.UT)
+                data.gauge_temperature_state = power_data_t::UNDER_TEMP;
+            else
+                data.gauge_temperature_state = power_data_t::NORMAL_TEMP;
+        }
+        else
+            data.gauge_fault = 1;
+
+        xQueueSend(powerDataQueue, &data, 0);
     }
 
     vTaskDelete(NULL);
+}
+
+static void charger_watchdog_feed_task(void *pvParameters)
+{
+    while (1)
+    {
+        vTaskDelay(pdMS_TO_TICKS(50 * 1000));
+        Charger->resetWatchDog();
+    }
 }
 
 static void power_i2c_init(void)
@@ -78,28 +140,28 @@ static void power_i2c_init(void)
     return;
 }
 
-static void print_charger_charger_control(BQ2562X_DEFS::CHARGER_CONTROL_REG chargerControl)
+static void print_charger_charger_control(BQ2562X_DEFS::CHARGER_CONTROL_REG charger_control)
 {
-    printf("EN_AUTO_IBATDIS = 0x%02x\n", chargerControl.EN_AUTO_IBATDIS.value());
-    printf("FORCE_IBATDIS = 0x%02x\n", chargerControl.FORCE_IBATDIS.value());
-    printf("EN_CHG = 0x%02x\n", chargerControl.EN_CHG.value());
-    printf("EN_HIZ = 0x%02x\n", chargerControl.EN_HIZ.value());
-    printf("FORCE_PMID_DIS = 0x%02x\n", chargerControl.FORCE_PMID_DIS.value());
-    printf("WD_RST = 0x%02x\n", chargerControl.WD_RST.value());
-    printf("WATCHDOG = 0x%02x\n", chargerControl.WATCHDOG.value());
-    printf("REG_RST = 0x%02x\n", chargerControl.REG_RST.value());
-    printf("TREG = 0x%02x\n", chargerControl.TREG.value());
-    printf("SET_CONV_FREQ = 0x%02x\n", chargerControl.SET_CONV_FREQ.value());
-    printf("SET_CONV_STRN = 0x%02x\n", chargerControl.SET_CONV_STRN.value());
-    printf("VBUS_OVP = 0x%02x\n", chargerControl.VBUS_OVP.value());
-    printf("PFM_FWD_DIS = 0x%02x\n", chargerControl.PFM_FWD_DIS.value());
-    printf("BATFET_CTRL_WVBUS = 0x%02x\n", chargerControl.BATFET_CTRL_WVBUS.value());
-    printf("BATFET_DLY = 0x%02x\n", chargerControl.BATFET_DLY.value());
-    printf("BATFET_CTRL = 0x%02x\n", chargerControl.BATFET_CTRL.value());
-    printf("IBAT_PK = 0x%02x\n", chargerControl.IBAT_PK.value());
-    printf("VBAT_UVLO = 0x%02x\n", chargerControl.VBAT_UVLO.value());
-    printf("EN_EXTILIM = 0x%02x\n", chargerControl.EN_EXTILIM.value());
-    printf("CHG_RATE = 0x%02x\n", chargerControl.CHG_RATE.value());
+    printf("EN_AUTO_IBATDIS = 0x%02x\n", charger_control.EN_AUTO_IBATDIS.value());
+    printf("FORCE_IBATDIS = 0x%02x\n", charger_control.FORCE_IBATDIS.value());
+    printf("EN_CHG = 0x%02x\n", charger_control.EN_CHG.value());
+    printf("EN_HIZ = 0x%02x\n", charger_control.EN_HIZ.value());
+    printf("FORCE_PMID_DIS = 0x%02x\n", charger_control.FORCE_PMID_DIS.value());
+    printf("WD_RST = 0x%02x\n", charger_control.WD_RST.value());
+    printf("WATCHDOG = 0x%02x\n", charger_control.WATCHDOG.value());
+    printf("REG_RST = 0x%02x\n", charger_control.REG_RST.value());
+    printf("TREG = 0x%02x\n", charger_control.TREG.value());
+    printf("SET_CONV_FREQ = 0x%02x\n", charger_control.SET_CONV_FREQ.value());
+    printf("SET_CONV_STRN = 0x%02x\n", charger_control.SET_CONV_STRN.value());
+    printf("VBUS_OVP = 0x%02x\n", charger_control.VBUS_OVP.value());
+    printf("PFM_FWD_DIS = 0x%02x\n", charger_control.PFM_FWD_DIS.value());
+    printf("BATFET_CTRL_WVBUS = 0x%02x\n", charger_control.BATFET_CTRL_WVBUS.value());
+    printf("BATFET_DLY = 0x%02x\n", charger_control.BATFET_DLY.value());
+    printf("BATFET_CTRL = 0x%02x\n", charger_control.BATFET_CTRL.value());
+    printf("IBAT_PK = 0x%02x\n", charger_control.IBAT_PK.value());
+    printf("VBAT_UVLO = 0x%02x\n", charger_control.VBAT_UVLO.value());
+    printf("EN_EXTILIM = 0x%02x\n", charger_control.EN_EXTILIM.value());
+    printf("CHG_RATE = 0x%02x\n", charger_control.CHG_RATE.value());
 }
 
 static void print_gauge_control_status(BQ27426_DEFS::CONTROL_STATUS controlStatus)

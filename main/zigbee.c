@@ -229,7 +229,7 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
                      extended_pan_id[7], extended_pan_id[6], extended_pan_id[5], extended_pan_id[4],
                      extended_pan_id[3], extended_pan_id[2], extended_pan_id[1], extended_pan_id[0],
                      esp_zb_get_pan_id(), esp_zb_get_current_channel());
-            xTaskCreate(MainTask, "Main_Task", 4096, NULL, 5, NULL);
+            xTaskCreate(main_task, "Main_Task", 4096, NULL, 5, NULL);
         }
         else
         {

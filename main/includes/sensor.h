@@ -12,10 +12,10 @@ extern "C"
         float humidity;
         float pressure;
         uint32_t timestamp;
-    } sensorData_t;
+    } sensor_data_t;
 
-    void SensorInitTask(void *pvParameters);
-    void SensorTask(void *pvParameters);
+    void sensor_init_task(void *pvParameters);
+    void sensor_task(void *pvParameters);
 
 #ifdef __cplusplus
 }

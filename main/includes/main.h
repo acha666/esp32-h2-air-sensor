@@ -6,7 +6,9 @@
 
 extern TaskHandle_t tempSensorTaskHandle;
 extern QueueHandle_t sensorDataQueue;
+extern QueueHandle_t powerDataQueue;
+extern QueueHandle_t displayMainDataQueue;
 
-void MainTask(void *pvParameters);
+void main_task(void *pvParameters);
 
 #endif

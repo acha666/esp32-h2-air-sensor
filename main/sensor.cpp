@@ -27,7 +27,7 @@ Adafruit_Sensor *pressure_sensor = NULL;
 
 i2c_master_bus_handle_t sensor_i2c_master_bus_handle;
 
-extern "C" void SensorInitTask(void *pvParameters)
+extern "C" void sensor_init_task(void *pvParameters)
 {
     sensor_i2c_init();
 
@@ -45,17 +45,17 @@ extern "C" void SensorInitTask(void *pvParameters)
     lps22_init();
 #endif
 
-    xTaskCreate(SensorTask, "Temp_Sensor_Task", 4096, NULL, 5, &tempSensorTaskHandle);
+    xTaskCreate(sensor_task, "Temp_Sensor_Task", 4096, NULL, 5, &tempSensorTaskHandle);
     assert(tempSensorTaskHandle != NULL);
 
     vTaskDelete(NULL);
 }
 
-extern "C" void SensorTask(void *pvParameters)
+extern "C" void sensor_task(void *pvParameters)
 {
     sensors_event_t humidity_event, temp_event;
     sensors_event_t pressure_temp_event, pressure_event;
-    static sensorData_t data;
+    static sensor_data_t data;
 
     while (1)
     {
