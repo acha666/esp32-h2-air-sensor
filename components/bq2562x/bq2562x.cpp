@@ -35,7 +35,7 @@
 #include "bq2562x.h"
 #include "bq2562x_defs.h"
 #include "i2c_register.h"
-#include "iostream"
+#include <stdexcept>
 #include <memory>
 
 using std::runtime_error;
