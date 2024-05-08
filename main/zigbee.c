@@ -15,8 +15,10 @@ static esp_err_t zb_attribute_handler(const esp_zb_zcl_set_attr_value_message_t 
 static esp_err_t zb_action_handler(esp_zb_core_action_callback_id_t callback_id, const void *message);
 
 /* initialize Zigbee stack with Zigbee end-device config */
-void ZigbeeTask(void *pvParameters)
+void zigbee_task(void *pvParameters)
 {
+    xEventGroupSetBits(xZigbeeEvents, ZIGBEE_INIT_IN_PROGRESS);
+
     esp_zb_cfg_t zb_nwk_cfg = ESP_ZB_ZED_CONFIG();
     esp_zb_init(&zb_nwk_cfg);
 
@@ -95,7 +97,7 @@ void ZigbeeTask(void *pvParameters)
 
     // ------------------------------ Create endpoint list ------------------------------
     esp_zb_ep_list_t *esp_zb_ep_list = esp_zb_ep_list_create();
-    esp_zb_endpoint_config_t ep_config={
+    esp_zb_endpoint_config_t ep_config = {
         .endpoint = HA_SENSOR_ENDPOINT,
         .app_profile_id = ESP_ZB_AF_HA_PROFILE_ID,
         .app_device_id = ESP_ZB_HA_SIMPLE_SENSOR_DEVICE_ID,
@@ -106,6 +108,24 @@ void ZigbeeTask(void *pvParameters)
     // ------------------------------ Register Device ------------------------------
     esp_zb_device_register(esp_zb_ep_list);
     esp_zb_core_action_handler_register(zb_action_handler);
+
+    esp_zb_zcl_reporting_info_t reporting_info = {
+        .direction = ESP_ZB_ZCL_CMD_DIRECTION_TO_SRV,
+        .ep = HA_SENSOR_ENDPOINT,
+        .cluster_id = ESP_ZB_ZCL_CLUSTER_ID_TEMP_MEASUREMENT,
+        .cluster_role = ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
+        .dst.profile_id = ESP_ZB_AF_HA_PROFILE_ID,
+        .u.send_info.min_interval = 1,
+        .u.send_info.max_interval = 0,
+        .u.send_info.def_min_interval = 1,
+        .u.send_info.def_max_interval = 0,
+        .u.send_info.delta.u16 = 100,
+        .attr_id = ESP_ZB_ZCL_ATTR_TEMP_MEASUREMENT_VALUE_ID,
+        .manuf_code = ESP_ZB_ZCL_ATTR_NON_MANUFACTURER_SPECIFIC,
+    };
+
+    esp_zb_zcl_update_reporting_info(&reporting_info);
+
     esp_zb_set_primary_network_channel_set(ESP_ZB_PRIMARY_CHANNEL_MASK);
 
     ESP_ERROR_CHECK(esp_zb_start(false));
@@ -115,7 +135,9 @@ void ZigbeeTask(void *pvParameters)
 esp_err_t writeAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attributeID, void *value)
 {
     esp_zb_zcl_status_t status;
+    esp_zb_lock_acquire(portMAX_DELAY);
     status = esp_zb_zcl_set_attribute_val(endpoint, clusterID, ESP_ZB_ZCL_CLUSTER_SERVER_ROLE, attributeID, value, false);
+    esp_zb_lock_release();
 
     if (status != ESP_ZB_ZCL_STATUS_SUCCESS)
     {
@@ -131,16 +153,18 @@ esp_err_t reportAttribute(uint8_t endpoint, uint16_t clusterID, uint16_t attribu
     esp_zb_zcl_status_t status;
     esp_zb_zcl_report_attr_cmd_t cmd = {
         .zcl_basic_cmd = {
-            .dst_addr_u.addr_short = 0x0000,
-            .dst_endpoint = endpoint,
+            // .dst_addr_u.addr_short = 0x0000,
+            // .dst_endpoint = endpoint,
             .src_endpoint = endpoint,
         },
-        .address_mode = ESP_ZB_APS_ADDR_MODE_16_ENDP_PRESENT,
+        .address_mode = ESP_ZB_APS_ADDR_MODE_DST_ADDR_ENDP_NOT_PRESENT,
         .clusterID = clusterID,
         .attributeID = attributeID,
         .cluster_role = ESP_ZB_ZCL_CLUSTER_SERVER_ROLE,
     };
+    esp_zb_lock_acquire(portMAX_DELAY);
     status = esp_zb_zcl_report_attr_cmd_req(&cmd);
+    esp_zb_lock_release();
 
     if (status != ESP_ZB_ZCL_STATUS_SUCCESS)
     {
@@ -203,6 +227,7 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
     {
     case ESP_ZB_ZDO_SIGNAL_SKIP_STARTUP:
         ESP_LOGI(TAG, "Zigbee stack initialized");
+        xEventGroupSetBits(xZigbeeEvents, ZIGBEE_INIT_SUCCESS);
         esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_INITIALIZATION);
         break;
     case ESP_ZB_BDB_SIGNAL_DEVICE_FIRST_START:
@@ -212,27 +237,30 @@ void esp_zb_app_signal_handler(esp_zb_app_signal_t *signal_struct)
             ESP_LOGI(TAG, "Device started up in %s factory-reset mode", esp_zb_bdb_is_factory_new() ? "" : "non");
 
             ESP_LOGI(TAG, "Start network steering");
+            xEventGroupSetBits(xZigbeeEvents, ZIGBEE_STEERING_START);
             esp_zb_bdb_start_top_level_commissioning(ESP_ZB_BDB_MODE_NETWORK_STEERING);
         }
         else
         {
             /* commissioning failed */
+            xEventGroupSetBits(xZigbeeEvents, ZIGBEE_INIT_FAILED);
             ESP_LOGW(TAG, "Failed to initialize Zigbee stack (status: %s)", esp_err_to_name(err_status));
         }
         break;
     case ESP_ZB_BDB_SIGNAL_STEERING:
         if (err_status == ESP_OK)
         {
+            xEventGroupSetBits(xZigbeeEvents, ZIGBEE_NETWORK_JOINED);
             esp_zb_ieee_addr_t extended_pan_id;
             esp_zb_get_extended_pan_id(extended_pan_id);
             ESP_LOGI(TAG, "Joined network successfully (Extended PAN ID: %02x:%02x:%02x:%02x:%02x:%02x:%02x:%02x, PAN ID: 0x%04hx, Channel:%d)",
                      extended_pan_id[7], extended_pan_id[6], extended_pan_id[5], extended_pan_id[4],
                      extended_pan_id[3], extended_pan_id[2], extended_pan_id[1], extended_pan_id[0],
                      esp_zb_get_pan_id(), esp_zb_get_current_channel());
-            xTaskCreate(main_task, "Main_Task", 4096, NULL, 5, NULL);
         }
         else
         {
+            xEventGroupSetBits(xZigbeeEvents, ZIGBEE_STEERING_FAILED);
             ESP_LOGI(TAG, "Network steering was not successful (status: %s)", esp_err_to_name(err_status));
             esp_zb_scheduler_alarm((esp_zb_callback_t)bdb_start_top_level_commissioning_cb, ESP_ZB_BDB_MODE_NETWORK_STEERING, 1000);
         }

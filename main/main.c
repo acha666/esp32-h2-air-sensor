@@ -12,24 +12,49 @@
 #include "zigbee.h"
 #include "display.h"
 
+EventGroupHandle_t xZigbeeEvents;
 QueueHandle_t sensorDataQueue;
 QueueHandle_t powerDataQueue;
 QueueHandle_t displayMainDataQueue;
-TaskHandle_t tempSensorTaskHandle = NULL;
+QueueHandle_t zigbeeReportDataQueue;
+TaskHandle_t sensorTaskHandle = NULL;
 TaskHandle_t powerTaskHandle = NULL;
 
 static const char *TAG = "Main";
 
 void main_task(void *pvParameters)
 {
-    sensor_data_t sensor_data;
-    power_data_t power_data;
+    bool zigbee_init_success = false;
+    EventBits_t uxBits;
+    uxBits = xEventGroupWaitBits(
+        xZigbeeEvents,
+        ZIGBEE_INIT_SUCCESS | ZIGBEE_INIT_FAILED,
+        pdTRUE,
+        pdFALSE,
+        pdMS_TO_TICKS(10 * 1000));
+
+    if (!(uxBits & ZIGBEE_INIT_SUCCESS) && !(uxBits & ZIGBEE_INIT_FAILED))
+    {
+        ESP_LOGE(TAG, "Zigbee init timeout");
+        vTaskDelete(NULL);
+    }
+    else if (uxBits & ZIGBEE_INIT_SUCCESS)
+    {
+        ESP_LOGI(TAG, "Zigbee init success");
+        zigbee_init_success = true;
+    }
+
     while (1)
     {
+        sensor_data_t sensor_data;
+        power_data_t power_data;
         display_main_data_t display_main_data;
+        zigbee_report_data_t zigbee_report_data;
+
         xQueueReset(sensorDataQueue);
         xQueueReset(powerDataQueue);
-        xTaskNotifyGive(tempSensorTaskHandle);
+
+        xTaskNotifyGive(sensorTaskHandle);
         xTaskNotifyGive(powerTaskHandle);
 
         if (xQueueReceive(sensorDataQueue, &sensor_data, pdMS_TO_TICKS(5000)) == pdPASS)
@@ -39,10 +64,9 @@ void main_task(void *pvParameters)
             display_main_data.humidity = sensor_data.humidity;
             display_main_data.temperature = sensor_data.temperature;
             display_main_data.pressure = sensor_data.pressure;
-
-            app_zb_report_temperature(sensor_data.temperature);
-            app_zb_report_humidity(sensor_data.humidity);
-            app_zb_report_pressure(sensor_data.pressure);
+            zigbee_report_data.temperature = sensor_data.temperature;
+            zigbee_report_data.humidity = sensor_data.humidity;
+            zigbee_report_data.pressure = sensor_data.pressure;
         }
         else
             ESP_LOGE(TAG, "No data from sensor");
@@ -70,7 +94,10 @@ void main_task(void *pvParameters)
             ESP_LOGE(TAG, "No data from power");
 
         display_main_data.timestamp = esp_timer_get_time() / 1000;
+
         xQueueSend(displayMainDataQueue, &display_main_data, 0);
+        if (zigbee_init_success)
+            xQueueSend(zigbeeReportDataQueue, &zigbee_report_data, 0);
 
         vTaskDelay(60 * 1000 / portTICK_PERIOD_MS);
     }
@@ -128,12 +155,20 @@ void app_main(void)
     i2c_scan_task(2, 3);
     i2c_scan_task(26, 27);
 
+    xZigbeeEvents = xEventGroupCreate();
     sensorDataQueue = xQueueCreate(3, sizeof(sensor_data_t));
     powerDataQueue = xQueueCreate(3, sizeof(power_data_t));
     displayMainDataQueue = xQueueCreate(3, sizeof(display_main_data_t));
-    assert(sensorDataQueue != NULL && powerDataQueue != NULL && displayMainDataQueue != NULL);
+    zigbeeReportDataQueue = xQueueCreate(3, sizeof(zigbee_report_data_t));
+    assert(xZigbeeEvents != NULL);
+    assert(sensorDataQueue != NULL);
+    assert(powerDataQueue != NULL);
+    assert(displayMainDataQueue != NULL);
+    assert(zigbeeReportDataQueue != NULL);
 
-    xTaskCreate(sensor_init_task, "Temp_Sensor_Init_Task", 4096, NULL, 5, NULL);
+    xTaskCreate(main_task, "Main_Task", 4096, NULL, 5, NULL);
+
+    xTaskCreate(sensor_task, "Sensor_Task", 4096, NULL, 5, &sensorTaskHandle);
     xTaskCreate(display_init_task, "Display_Task", 4096, NULL, 5, NULL);
     xTaskCreate(power_task, "Power_Task", 4096, NULL, 5, &powerTaskHandle);
 
@@ -146,5 +181,5 @@ void app_main(void)
     ESP_ERROR_CHECK(esp_zb_platform_config(&config));
     /* hardware related and device init */
 
-    xTaskCreate(ZigbeeTask, "Zigbee_Task", 4096, NULL, 5, NULL);
+    xTaskCreate(zigbee_task, "Zigbee_Task", 4096, NULL, 5, NULL);
 }
