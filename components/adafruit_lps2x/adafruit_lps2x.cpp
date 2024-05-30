@@ -99,10 +99,10 @@ void Adafruit_LPS2X::reset(void)
       I2C_RegisterBits(ctrl2_reg, 1, 2);
 
   sw_reset.write(1);
-  while (sw_reset.read())
-  {
-    vTaskDelay(1);
-  }
+  // while (sw_reset.read())
+  // {
+  //   vTaskDelay(1);
+  // }
 }
 
 /**

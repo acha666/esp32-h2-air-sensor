@@ -4,7 +4,23 @@
     {
       "type": "espidf",
       "name": "Launch",
-      "request": "launch"
+      "request": "launch",
+      // "debugPort": 9998,
+      "logLevel": 2,
+      // "mode": "manual",
+      "verifyAppBinBeforeDebug": false,
+      "tmoScaleFactor": 1,
+      "initGdbCommands": [
+        "target remote :3333",
+        "symbol-file ./build/esp32-h2-air-sensor.elf",
+        "mon reset halt",
+        "flushregs",
+        "thb app_main",
+        "c"
+      ],
+      "env": {
+
+      }
     }
   ]
 }

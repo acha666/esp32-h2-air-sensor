@@ -6,6 +6,12 @@
 #include "driver/gpio.h"
 #include "driver/i2c_master.h"
 
+#ifdef CONFIG_PM_ENABLE
+#include "esp_pm.h"
+#include "esp_private/esp_clk.h"
+#include "esp_sleep.h"
+#endif
+
 #include "main.h"
 #include "sensor.h"
 #include "power.h"
@@ -114,7 +120,7 @@ void i2c_scan_task(int i2c_gpio_sda, int i2c_gpio_scl)
         .scl_io_num = i2c_gpio_scl,
         .sda_io_num = i2c_gpio_sda,
         .glitch_ignore_cnt = 7,
-        .flags.enable_internal_pullup = true,
+        .flags.enable_internal_pullup = false,
     };
 
     ESP_ERROR_CHECK(i2c_new_master_bus(&i2c_bus_config, &tool_bus_handle) != ESP_OK);
@@ -150,10 +156,39 @@ void i2c_scan_task(int i2c_gpio_sda, int i2c_gpio_scl)
     // vTaskDelete(NULL);
 }
 
+static esp_err_t esp_zb_power_save_init(void)
+{
+    esp_err_t rc = ESP_OK;
+#ifdef CONFIG_PM_ENABLE
+    int cur_cpu_freq_mhz = CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ;
+    esp_pm_config_t pm_config = {
+        .max_freq_mhz = cur_cpu_freq_mhz,
+        .min_freq_mhz = cur_cpu_freq_mhz,
+#if CONFIG_FREERTOS_USE_TICKLESS_IDLE
+        .light_sleep_enable = true
+#endif
+    };
+    rc = esp_pm_configure(&pm_config);
+#endif
+    return rc;
+}
+
 void app_main(void)
 {
+    esp_zb_platform_config_t config = {
+        .radio_config = ESP_ZB_DEFAULT_RADIO_CONFIG(),
+        .host_config = ESP_ZB_DEFAULT_HOST_CONFIG(),
+    };
+    ESP_ERROR_CHECK(nvs_flash_init());
+    /* esp zigbee light sleep initialization*/
+    ESP_ERROR_CHECK(esp_zb_power_save_init());
+    /* load Zigbee platform config to initialization */
+    ESP_ERROR_CHECK(esp_zb_platform_config(&config));
+    /* hardware related and device init */
+
     i2c_scan_task(2, 3);
-    i2c_scan_task(26, 27);
+    i2c_scan_task(22, 25);
+    ESP_LOGI(TAG, "Starting main task");
 
     xZigbeeEvents = xEventGroupCreate();
     sensorDataQueue = xQueueCreate(3, sizeof(sensor_data_t));
@@ -168,18 +203,10 @@ void app_main(void)
 
     xTaskCreate(main_task, "Main_Task", 4096, NULL, 5, NULL);
 
-    xTaskCreate(sensor_task, "Sensor_Task", 4096, NULL, 5, &sensorTaskHandle);
-    xTaskCreate(display_init_task, "Display_Task", 4096, NULL, 5, NULL);
-    xTaskCreate(power_task, "Power_Task", 4096, NULL, 5, &powerTaskHandle);
+    xTaskCreate(sensor_task, "Sensor_Task", 4096, NULL, 4, &sensorTaskHandle);
+    // xTaskCreate(display_init_task, "Display_Task", 4096, NULL, 3, NULL);
+    xTaskCreate(power_task, "Power_Task", 4096, NULL, 2, &powerTaskHandle);
 
-    esp_zb_platform_config_t config = {
-        .radio_config = ESP_ZB_DEFAULT_RADIO_CONFIG(),
-        .host_config = ESP_ZB_DEFAULT_HOST_CONFIG(),
-    };
-    ESP_ERROR_CHECK(nvs_flash_init());
-    /* load Zigbee light_bulb platform config to initialization */
-    ESP_ERROR_CHECK(esp_zb_platform_config(&config));
-    /* hardware related and device init */
-
-    xTaskCreate(zigbee_task, "Zigbee_Task", 4096, NULL, 5, NULL);
+    xTaskCreate(zigbee_task, "Zigbee_Task", 4096, NULL, 1, NULL);
+    
 }

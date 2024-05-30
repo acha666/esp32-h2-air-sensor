@@ -58,11 +58,16 @@ esp_err_t Adafruit_LPS22::_init(int32_t sensor_id)
   threshp_reg = new I2C_Register(
       i2c_dev, (uint8_t)LPS22_THS_P_L_REG, 1);
 
-  reset();
+  ESP_LOGW("LPS22", "Resetting LPS22");
+  // reset();
+  ESP_LOGW("LPS22", "Reset complete");
+  vTaskDelay(portTICK_PERIOD_MS > 10 ? 1 : pdMS_TO_TICKS(10));
   // do any software reset or other initial setup
   setDataRate(LPS22_RATE_25_HZ);
+  ESP_LOGW("LPS22", "Data rate set");
   // interrupt on data ready
   configureInterrupt(true, false, true);
+  ESP_LOGW("LPS22", "Interrupt configured");
 
   pressure_sensor = new Adafruit_LPS2X_Pressure(this);
   temp_sensor = new Adafruit_LPS2X_Temp(this);

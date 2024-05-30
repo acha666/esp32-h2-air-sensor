@@ -43,7 +43,7 @@ private:
     uint8_t _buffer[4];
 
     uint32_t _cached = 0;
-    uint16_t _timeout = 500; // 500ms i2c timeout
+    uint16_t _timeout = 50; // 50ms i2c timeout
 };
 
 /*!

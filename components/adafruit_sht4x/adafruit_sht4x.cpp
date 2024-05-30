@@ -45,7 +45,10 @@ Adafruit_SHT4x::Adafruit_SHT4x(void) {}
  */
 Adafruit_SHT4x::~Adafruit_SHT4x(void)
 {
-    i2c_master_bus_rm_device(i2c_dev);
+    if (i2c_dev)
+    {
+        i2c_master_bus_rm_device(i2c_dev);
+    }
     if (temp_sensor)
     {
         delete temp_sensor;
