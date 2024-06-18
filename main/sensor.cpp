@@ -30,8 +30,8 @@ i2c_master_bus_handle_t sensor_i2c_master_bus_handle;
 static void sensor_init(void)
 {
 #ifdef CONFIG_PRJ_TEMP_SENSOR_SHT4x
-    // sht4x = Adafruit_SHT4x();
-    // sht4x_init();
+    sht4x = Adafruit_SHT4x();
+    sht4x_init();
 #elif CONFIG_PRJ_TEMP_SENSOR_SHT3x
     // todo
 #elif CONFIG_PRJ_TEMP_SENSOR_HDC302x
@@ -40,7 +40,7 @@ static void sensor_init(void)
 
 #ifdef CONFIG_PRJ_PRESSURE_SENSOR_LPS22HH
     lps22 = Adafruit_LPS22();
-    // lps22_init();
+    lps22_init();
 #endif
 }
 
@@ -58,18 +58,18 @@ extern "C" void sensor_task(void *pvParameters)
     {
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
-        // ESP_LOGI(TAG, "Reading temperature sensor");
-        // temp_sensor->getEvent(&temp_event);
+        ESP_LOGI(TAG, "Reading temperature sensor");
+        temp_sensor->getEvent(&temp_event);
 
-        // ESP_LOGI(TAG, "Reading humidity sensor");
-        // humidity_sensor->getEvent(&humidity_event);
+        ESP_LOGI(TAG, "Reading humidity sensor");
+        humidity_sensor->getEvent(&humidity_event);
         
-        // ESP_LOGI(TAG, "Reading pressure sensor");
-        // pressure_sensor->getEvent(&pressure_event);
+        ESP_LOGI(TAG, "Reading pressure sensor");
+        pressure_sensor->getEvent(&pressure_event);
 
-        // data.temperature = temp_event.temperature;
-        // data.humidity = humidity_event.relative_humidity;
-        // data.pressure = pressure_event.pressure;
+        data.temperature = temp_event.temperature;
+        data.humidity = humidity_event.relative_humidity;
+        data.pressure = pressure_event.pressure;
 
         if (xQueueSend(sensorDataQueue, &data, portMAX_DELAY) != pdPASS)
             assert(0);
